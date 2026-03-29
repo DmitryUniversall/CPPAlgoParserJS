@@ -34,7 +34,7 @@ export class Parser {
 
         try {
             const parser = new PrattParser(this.tokens.slice(this.position));
-            parser.parseTypeExpression()
+            parser.parseTypeExpression();
             pointer += parser.position;
         } catch (e) {
             // console.debug(e);
@@ -80,14 +80,23 @@ export class Parser {
     }
 
     parseDeclarationStatement(expectSemicolon = true) {
-        let typeExpression = this.parseTypeExpression();
+        const typeExpression = this.parseTypeExpression();
 
-        let varNameToken = this.expect(TokenType.IDENT);
+        const declarations = [];
 
-        let initExpression = null;
-        if (this.peek()?.text === OPERATORS.ASSIGN.literal) {
-            this.next();
-            initExpression = this.parseExpression();
+        while (true) {
+            const name = this.expect(TokenType.IDENT).text;
+
+            let initExpression = null;
+            if (this.peek()?.text === OPERATORS.ASSIGN.literal) {
+                this.expect(TokenType.OP);
+                initExpression = this.parseExpression();
+            }
+
+            declarations.push({ name: name, init: initExpression });
+
+            if (this.peek()?.type !== TokenType.COMMA) break;
+            this.expect(TokenType.COMMA);
         }
 
         if (expectSemicolon) this.expect(TokenType.SEMI);
@@ -96,8 +105,7 @@ export class Parser {
             nodeType: 'STATEMENT',
             type: 'DECLARATION_STATEMENT',
             varTypeExpr: typeExpression,
-            name: varNameToken.text,
-            init: initExpression,
+            declarations: declarations,
         };
     }
 
@@ -171,7 +179,8 @@ export class Parser {
         };
     }
 
-    parseForStatement() {  // TODO: Support 'for(;;)'
+    parseForStatement() {
+        // TODO: Support 'for(;;)'
         this.expect(TokenType.L_PAREN);
 
         const init = this.isDeclarationStart() ? this.parseDeclarationStatement(false) : this.parseExpression();

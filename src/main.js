@@ -11,6 +11,7 @@ function main() {
     for (int i = 0; i < n; i++)
     {
         string name;
+        int speed, capacity;
         cin >> name >> speed >> capacity;
 
         devices.push_back(new NetworkStorage(name, speed, capacity));
@@ -74,7 +75,8 @@ function main() {
 
     const lexer = new Lexer(input);
     const parser = new Parser(lexer.tokenize());
-    console.log(parser.parseProgram());
+    const result = parser.parseProgram();
+    console.log(result);
 }
 
-main()
+main();
