@@ -1,6 +1,7 @@
 export const TokenType = {
     IDENT: 'IDENT',
     NUMBER: 'NUMBER',
+    STRING_LITERAL: 'STRING_LITERAL',
 
     IF: 'IF',
     ELSE: 'ELSE',

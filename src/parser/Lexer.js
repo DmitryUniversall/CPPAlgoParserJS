@@ -7,33 +7,17 @@ const KEYWORDS = {
     while: TokenType.WHILE,
 };
 
-const OPERATORS = [
-    '==',
-    '!=',
-    '<=',
-    '>=',
-    '&&',
-    '||',
-    '++',
-    '--',
-    '+',
-    '-',
-    '*',
-    '/',
-    '=',
-    '<',
-    '>',
-    '&',
-];
-
-const SIGNS = [
-    '(',
-    ')',
-    '{',
-    '}',
-    ';',
-    ',',
-    '.'
+const OPERATORS = ['->', '==', '!=', '<=', '>=', '&&', '||', '++', '--', '+', '-', '*', '/', '=', '<', '>', '&'].sort((a, b) => b.length - a.length);
+const SIGN_TOKENS = [
+    TokenType.L_PAREN,
+    TokenType.R_PAREN,
+    TokenType.L_BRACE,
+    TokenType.R_BRACE,
+    TokenType.SEMI,
+    TokenType.COMMA,
+    TokenType.DOT,
+    TokenType.L_BRACKET,
+    TokenType.R_BRACKET,
 ];
 
 export default class Lexer {
@@ -42,24 +26,37 @@ export default class Lexer {
         this.position = 0;
     }
 
-    step() {
-        this.position++;
-    }
-
-    next() {
-        this.step();
-        return this.current();
-    }
-
-    current() {
+    peek() {
         return this.position < this.input.length ? this.input[this.position] : null;
     }
 
+    next() {
+        return this.position < this.input.length ? this.input[this.position++] : null;
+    }
+
+    isWhitespace(c) {
+        if (!c) return false;
+        return /\s/.test(c);
+    }
+
     isLetter(c) {
+        if (!c) return false;
         return /[a-zA-Z_]/.test(c);
     }
+
     isDigit(c) {
+        if (!c) return false;
         return /[0-9]/.test(c);
+    }
+
+    isDigitOrLetter(c) {
+        if (!c) return false;
+        return /[a-zA-Z0-9_]/.test(c);
+    }
+
+    isStartOfStringLiteral(c) {
+        if (!c) return false;
+        return c === '"';
     }
 
     tokenize() {
@@ -68,23 +65,28 @@ export default class Lexer {
         while (this.position < this.input.length) {
             this.skipWhitespaces();
 
-            let current = this.current();
-            if (current == null) break;
+            let char = this.peek();
+            if (char == null) break;
 
-            if (this.isLetter(current)) {
+            if (this.isLetter(char)) {
                 tokens.push(this.parseIdentifier());
                 continue;
             }
 
-            if (this.isDigit(current)) {
+            if (this.isDigit(char)) {
                 tokens.push(this.parseNumber());
                 continue;
             }
 
-            const sign = this.searchForSign();
-            if (sign) {
-                this.position += sign.text.length;
-                tokens.push(sign);
+            if (this.isStartOfStringLiteral(char)) {
+                tokens.push(this.parseStringLiteral());
+                continue;
+            }
+
+            const signToken = this.searchForSignToken();
+            if (signToken) {
+                this.position += signToken.text.length;
+                tokens.push(signToken);
                 continue;
             }
 
@@ -95,15 +97,15 @@ export default class Lexer {
                 continue;
             }
 
-            throw new Error(`Unexpected char: ${current}`);
+            throw new Error(`Unexpected char: '${char}'`);
         }
 
         tokens.push(new Token(TokenType.EOF, ''));
         return tokens;
     }
 
-    searchForSign() {
-        for (const sign of SIGNS) {
+    searchForSignToken() {
+        for (const sign of SIGN_TOKENS) {
             if (this.input.startsWith(sign, this.position)) {
                 return new Token(sign, sign);
             }
@@ -123,19 +125,34 @@ export default class Lexer {
     }
 
     skipWhitespaces() {
-        let current = this.current();
-        while (current != null && /\s/.test(current)) {
-            current = this.next();
+        while (this.isWhitespace(this.peek())) this.next();
+    }
+
+    parseStringLiteral() {
+        this.next(); // Skip '"'
+
+        let result = '';
+        while (true) {
+            let current = this.next();
+            if (current === null || current === '"') break;
+
+            if (current === '\\') {
+                const next = this.next();
+                if (next === 'n') result += '\n';
+                else if (next === 't') result += '\t';
+                else result += next;
+            } else {
+                result += current;
+            }
         }
+
+        return new Token(TokenType.STRING_LITERAL, result);
     }
 
     parseIdentifier() {
         let start = this.position;
 
-        let current = this.current();
-        while (current != null && /[a-zA-Z0-9_]/.test(current)) {
-            current = this.next();
-        }
+        while (this.isDigitOrLetter(this.peek())) this.next();
 
         const text = this.input.slice(start, this.position);
         const type = KEYWORDS[text] || TokenType.IDENT;
@@ -146,10 +163,7 @@ export default class Lexer {
     parseNumber() {
         let start = this.position;
 
-        let current = this.current();
-        while (current != null && this.isDigit(current)) {
-            current = this.next();
-        }
+        while (this.isDigit(this.peek())) this.next();
 
         const text = this.input.slice(start, this.position);
 

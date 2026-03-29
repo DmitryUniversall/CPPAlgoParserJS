@@ -303,6 +303,14 @@ export class PrattParser {
             };
         }
 
+        if (token.type === TokenType.STRING_LITERAL) {
+            return {
+                nodeType: 'EXPRESSION',
+                type: 'STRING_LITERAL_EXPRESSION',
+                value: token.text,
+            };
+        }
+
         throw new Error(`Unexpected token in expression: '${token.type}' (${token.text})`);
     }
 }

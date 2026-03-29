@@ -2,7 +2,9 @@ import Lexer from './parser/Lexer.js';
 import { Parser } from './parser/Parser.js';
 
 function main() {
-    const input = `printf(123);
+    const input = `
+    string a = "test";
+    printf("Hello world!");
     for (int i = 0; i < current - 1; i++) {
         test.printf(444);
     }
