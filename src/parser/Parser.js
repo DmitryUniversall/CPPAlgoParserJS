@@ -1,5 +1,6 @@
 import { TokenType } from './Token.js';
 import { PrattParser } from './PrattParser.js';
+import { KEYWORDS } from './lexer/keywords.js';
 
 export class Parser {
     constructor(tokens) {
@@ -7,7 +8,8 @@ export class Parser {
         this.position = 0;
     }
 
-    peek() {
+    peek(required = false) {
+        if (this.position >= this.tokens.length && required) throw new Error('Next token is required, but was not found');
         return this.position < this.tokens.length ? this.tokens[this.position] : null;
     }
 
@@ -19,8 +21,8 @@ export class Parser {
     expect(type, text = null) {
         const next = this.next();
 
-        if (!next) throw new Error(`Expected token: "${type}" (${text ?? 'Any'}), but nothing was found`);
-        if (next.type !== type) throw new Error(`Expected type ${type}, got ${next.type} (${next.text})`);
+        if (!next) throw new Error(`Expected token: '${type}' (${text ?? 'Any'}), but nothing was found`);
+        if (next.type !== type) throw new Error(`Expected token type '${type}', got '${next.type}' (${next.text})`);
         if (text !== null && next.text !== text) throw new Error(`Expected '${text}', got '${next.text}'`);
 
         return next;
@@ -83,28 +85,22 @@ export class Parser {
     parseStatement() {
         if (this.isDeclarationStart()) return this.parseDeclarationStatement();
 
-        const token = this.peek();
+        const token = this.peek(true);
         if (token.type === TokenType.L_BRACE) return this.parseBlockStatement();
-        if (token.type === TokenType.IF) return this.parseIfStatement();
-        if (token.type === TokenType.WHILE) return this.parseWhileStatement();
-        if (token.type === TokenType.FOR) return this.parseForStatement();
-        if (token.type === TokenType.DELETE) return this.parseDeleteStatement();
+        if (token.type === TokenType.KEYWORD) return this.parseKeywordStatement(token);
 
         return this.parseExpressionStatement();
     }
 
-    parseDeleteStatement() {
-        this.expect(TokenType.DELETE);
+    parseKeywordStatement(token) {
+        this.expect(TokenType.KEYWORD);
 
-        const deleted = this.parseExpression();
+        if (token.text === KEYWORDS.IF.literal) return this.parseIfStatement();
+        if (token.text === KEYWORDS.WHILE.literal) return this.parseWhileStatement();
+        if (token.text === KEYWORDS.FOR.literal) return this.parseForStatement();
+        if (token.text === KEYWORDS.DELETE.literal) return this.parseDeleteStatement();
 
-        this.expect(TokenType.SEMI);
-
-        return {
-            nodeType: 'STATEMENT',
-            type: 'DELETE_STATEMENT',
-            deleted: deleted,
-        };
+        throw new Error(`Unknown keyword: '${token.text}'`);
     }
 
     parseDeclarationStatement(expectSemicolon = true) {
@@ -161,9 +157,19 @@ export class Parser {
         };
     }
 
-    parseIfStatement() {
-        this.expect(TokenType.IF);
+    parseDeleteStatement() {
+        const deleted = this.parseExpression();
 
+        this.expect(TokenType.SEMI);
+
+        return {
+            nodeType: 'STATEMENT',
+            type: 'DELETE_STATEMENT',
+            deleted: deleted,
+        };
+    }
+
+    parseIfStatement() {
         this.expect(TokenType.L_PAREN);
         const condition = this.parseExpression(); // TODO: Validate
         this.expect(TokenType.R_PAREN);
@@ -172,8 +178,9 @@ export class Parser {
         if (then.type !== 'BLOCK_STATEMENT') throw new Error(`Expected block statement after 'if (...)'. Got: ${then.type}`);
 
         let else_ = null;
-        if (this.peek() === TokenType.ELSE) {
-            this.expect(TokenType.ELSE);
+        const nextToken = this.peek();
+        if (nextToken.type === TokenType.KEYWORD && nextToken.text === KEYWORDS.ELSE.literal) {
+            this.expect(TokenType.KEYWORD);
             else_ = this.parseStatement();
             if (else_.type !== 'BLOCK_STATEMENT') throw new Error(`Expected block statement after 'else'. Got: ${else_.type}`);
         }
@@ -188,8 +195,6 @@ export class Parser {
     }
 
     parseWhileStatement() {
-        this.expect(TokenType.WHILE);
-
         this.expect(TokenType.L_PAREN);
         const condition = this.parseExpression(); // TODO: Validate
         this.expect(TokenType.R_PAREN);
@@ -206,8 +211,6 @@ export class Parser {
     }
 
     parseForStatement() {
-        this.expect(TokenType.FOR);
-
         this.expect(TokenType.L_PAREN);
 
         const init = this.isDeclarationStart() ? this.parseDeclarationStatement(false) : this.parseExpression();

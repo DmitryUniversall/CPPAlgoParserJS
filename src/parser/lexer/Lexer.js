@@ -1,16 +1,10 @@
-import { Token, TokenType } from './Token.js';
+import { Token, TokenType } from '../Token.js';
+import { operatorLiteralsMap } from './operators.js';
+import { keywordLiteralsMap } from './keywords.js';
 
-const KEYWORDS = {
-    if: TokenType.IF,
-    else: TokenType.ELSE,
-    for: TokenType.FOR,
-    while: TokenType.WHILE,
-    delete: TokenType.DELETE,
-    nullptr: TokenType.NULLPTR,
-};
+const operatorLiterals = Object.keys(operatorLiteralsMap).sort((a, b) => b.length - a.length);
 
-const OPERATORS = ['->', '==', '!=', '<=', '>=', '&&', '||', '++', '--', '+', '-', '*', '/', '=', '<', '>', '&'].sort((a, b) => b.length - a.length);
-const SIGN_TOKENS = [
+const SINGLE_TOKENS = [
     TokenType.L_PAREN,
     TokenType.R_PAREN,
     TokenType.L_BRACE,
@@ -84,7 +78,7 @@ export default class Lexer {
                 continue;
             }
 
-            const signToken = this.searchForSignToken();
+            const signToken = this.searchForSingleToken();
             if (signToken) {
                 this.position += signToken.text.length;
                 tokens.push(signToken);
@@ -105,10 +99,10 @@ export default class Lexer {
         return tokens;
     }
 
-    searchForSignToken() {
-        for (const sign of SIGN_TOKENS) {
-            if (this.input.startsWith(sign, this.position)) {
-                return new Token(sign, sign);
+    searchForSingleToken() {
+        for (const token of SINGLE_TOKENS) {
+            if (this.input.startsWith(token, this.position)) {
+                return new Token(token, token);
             }
         }
 
@@ -116,9 +110,9 @@ export default class Lexer {
     }
 
     searchForOperator() {
-        for (const op of OPERATORS) {
-            if (this.input.startsWith(op, this.position)) {
-                return new Token(TokenType.OP, op);
+        for (const operator of operatorLiterals) {
+            if (this.input.startsWith(operator, this.position)) {
+                return new Token(TokenType.OP, operator);
             }
         }
 
@@ -156,9 +150,8 @@ export default class Lexer {
         while (this.isDigitOrLetter(this.peek())) this.next();
 
         const text = this.input.slice(start, this.position);
-        const type = KEYWORDS[text] || TokenType.IDENT;
 
-        return new Token(type, text);
+        return new Token(keywordLiteralsMap[text] !== undefined ? TokenType.KEYWORD : TokenType.IDENT, text);
     }
 
     parseNumber() {

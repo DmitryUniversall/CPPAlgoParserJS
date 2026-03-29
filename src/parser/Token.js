@@ -3,12 +3,7 @@ export const TokenType = {
     NUMBER: 'NUMBER',
     STRING_LITERAL: 'STRING_LITERAL',
 
-    IF: 'IF',
-    ELSE: 'ELSE',
-    FOR: 'FOR',
-    WHILE: 'WHILE',
-    DELETE: 'DELETE',
-    NULLPTR: 'NULLPTR',
+    KEYWORD: 'KEYWORD',
 
     L_PAREN: '(',
     R_PAREN: ')',

@@ -1,4 +1,4 @@
-import Lexer from './parser/Lexer.js';
+import Lexer from './parser/lexer/Lexer.js';
 import { Parser } from './parser/Parser.js';
 
 function main() {

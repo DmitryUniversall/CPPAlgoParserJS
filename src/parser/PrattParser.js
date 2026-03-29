@@ -1,40 +1,21 @@
 import { TokenType } from './Token.js';
+import { OPERATORS } from './lexer/operators.js';
+import { keywordLiteralsMap, KEYWORDS } from './lexer/keywords.js';
 
-const PREFIX_OPERATORS = {
-    '*': { precedence: 8 },
-    '&': { precedence: 8 },
-    '-': { precedence: 8 },
-    '--': { precedence: 8 },
-    '++': { precedence: 8 },
-};
+const PREFIX_OPERATORS = Object.entries(OPERATORS).reduce((acc, [_, config]) => {
+    if (config.prefix) acc[config.literal] = config.prefix;
+    return acc;
+}, {});
 
-const INFIX_OPERATORS = {
-    '=': { precedence: 1, assoc: 'right' },
+const INFIX_OPERATORS = Object.entries(OPERATORS).reduce((acc, [_, config]) => {
+    if (config.infix) acc[config.literal] = config.infix;
+    return acc;
+}, {});
 
-    '||': { precedence: 2 },
-    '&&': { precedence: 3 },
-
-    '==': { precedence: 4 },
-    '!=': { precedence: 4 },
-
-    '<': { precedence: 5 },
-    '>': { precedence: 5 },
-    '<=': { precedence: 5 },
-    '>=': { precedence: 5 },
-
-    '+': { precedence: 6 },
-    '-': { precedence: 6 },
-
-    '*': { precedence: 7 },
-    '/': { precedence: 7 },
-};
-
-const POSTFIX_OPERATORS = {
-    '--': { precedence: 8 },
-    '++': { precedence: 8 },
-    '->': { precedence: 9 },
-    '.': { precedence: 9 },
-};
+const POSTFIX_OPERATORS = Object.entries(OPERATORS).reduce((acc, [_, config]) => {
+    if (config.postfix) acc[config.literal] = config.postfix;
+    return acc;
+}, {});
 
 export class PrattParser {
     constructor(tokens) {
@@ -47,7 +28,7 @@ export class PrattParser {
     }
 
     next(required = false) {
-        if (this.position >= this.tokens.length && required) throw new Error("Next token is required, but was not found");
+        if (this.position >= this.tokens.length && required) throw new Error('Next token is required, but was not found');
         return this.position < this.tokens.length ? this.tokens[this.position++] : null;
     }
 
@@ -141,7 +122,9 @@ export class PrattParser {
 
     parseIndex(left) {
         const expression = this.parseExpression();
+
         this.expect(TokenType.R_BRACKET);
+
         return {
             nodeType: 'EXPRESSION',
             type: 'INDEX_EXPRESSION',
@@ -152,24 +135,25 @@ export class PrattParser {
 
     parsePostfix(left, token) {
         // left++
-        if (token.text === '++') {
+        if (token.text === OPERATORS.INC.literal) {
             return {
                 nodeType: 'EXPRESSION',
-                type: 'POST_INCREMENT_EXPRESSION',
+                type: 'POSTFIX_INCREMENT_EXPRESSION',
                 expr: left,
             };
         }
 
         // left--
-        if (token.text === '--') {
+        if (token.text === OPERATORS.DEC.literal) {
             return {
                 nodeType: 'EXPRESSION',
-                type: 'POST_DECREMENT_EXPRESSION',
+                type: 'POSTFIX_DECREMENT_EXPRESSION',
                 expr: left,
             };
         }
 
-        if (token.text === ".") {
+        // left.X
+        if (token.text === OPERATORS.DOT.literal) {
             const memberName = this.expect(TokenType.IDENT);
 
             return {
@@ -180,7 +164,8 @@ export class PrattParser {
             };
         }
 
-        if (token.text === '->') {
+        // left->X
+        if (token.text === OPERATORS.ARROW.literal) {
             const memberName = this.expect(TokenType.IDENT);
 
             return {
@@ -196,7 +181,8 @@ export class PrattParser {
         const nextPrecedence = infixInfo.assoc === 'right' ? infixInfo.precedence - 1 : infixInfo.precedence;
         const right = this.parseExpression(nextPrecedence);
 
-        if (token.text === '=') {
+        // left = right
+        if (token.text === OPERATORS.EQ.literal) {
             return {
                 nodeType: 'EXPRESSION',
                 type: 'ASSIGNMENT_EXPRESSION',
@@ -205,6 +191,7 @@ export class PrattParser {
             };
         }
 
+        // left <op> right
         return {
             nodeType: 'EXPRESSION',
             type: 'BINARY_OPERATION_EXPRESSION',
@@ -215,8 +202,8 @@ export class PrattParser {
     }
 
     parsePrefix(token) {
-        // *i
-        if (token.text === '*') {
+        // *obj
+        if (token.text === OPERATORS.STAR.literal) {
             return {
                 nodeType: 'EXPRESSION',
                 type: 'DEREF_EXPRESSION',
@@ -224,8 +211,8 @@ export class PrattParser {
             };
         }
 
-        // &i
-        if (token.text === '&') {
+        // &obj
+        if (token.text === OPERATORS.AND.literal) {
             return {
                 nodeType: 'EXPRESSION',
                 type: 'ADDRESS_EXPRESSION',
@@ -233,8 +220,8 @@ export class PrattParser {
             };
         }
 
-        // -i
-        if (token.text === '-') {
+        // -obj
+        if (token.text === OPERATORS.MINUS.literal) {
             return {
                 nodeType: 'EXPRESSION',
                 type: 'NEGATE_EXPRESSION',
@@ -242,20 +229,20 @@ export class PrattParser {
             };
         }
 
-        // --i
-        if (token.text === '--') {
+        // ++obj
+        if (token.text === OPERATORS.INC.literal) {
             return {
                 nodeType: 'EXPRESSION',
-                type: 'PRE_DECREMENT_EXPRESSION',
+                type: 'PREFIX_INCREMENT_EXPRESSION',
                 expr: this.parseExpression(PREFIX_OPERATORS[token.text].precedence),
             };
         }
 
-        // ++i
-        if (token.text === '++') {
+        // --obj
+        if (token.text === OPERATORS.DEC.literal) {
             return {
                 nodeType: 'EXPRESSION',
-                type: 'PRE_INCREMENT_EXPRESSION',
+                type: 'PREFIX_DECREMENT_EXPRESSION',
                 expr: this.parseExpression(PREFIX_OPERATORS[token.text].precedence),
             };
         }
@@ -269,13 +256,7 @@ export class PrattParser {
             };
         }
 
-        // (...)
-        if (token.type === TokenType.L_PAREN) {
-            const expression = this.parseExpression();
-            this.expect(TokenType.R_PAREN);
-            return expression;
-        }
-
+        // Identifier (obj)
         if (token.type === TokenType.IDENT) {
             return {
                 nodeType: 'EXPRESSION',
@@ -284,20 +265,30 @@ export class PrattParser {
             };
         }
 
-        if (token.type === TokenType.NULLPTR) {
+        // Keyword (nullptr)
+        const keyword = keywordLiteralsMap[token.text];
+        if (keyword !== undefined) {
             return {
                 nodeType: 'EXPRESSION',
-                type: 'NULLPTR_EXPRESSION',
-                value: token.text,
+                type: 'KEYWORD_EXPRESSION',
+                keyword: keyword,
             };
         }
 
+        // String literal ("obj")
         if (token.type === TokenType.STRING_LITERAL) {
             return {
                 nodeType: 'EXPRESSION',
                 type: 'STRING_LITERAL_EXPRESSION',
                 value: token.text,
             };
+        }
+
+        // (...)
+        if (token.type === TokenType.L_PAREN) {
+            const expression = this.parseExpression();
+            this.expect(TokenType.R_PAREN);
+            return expression;
         }
 
         throw new Error(`Unexpected token in expression: '${token.type}' (${token.text})`);
