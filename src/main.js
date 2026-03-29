@@ -3,12 +3,16 @@ import { Parser } from './parser/Parser.js';
 
 function main() {
     const input = `
-    string a = "test";
-    printf("Hello world!");
-    for (int i = 0; i < current - 1; i++) {
-        test.printf(444);
-    }
-    printf(321);`;
+    for (size_t i = 0; i < devices_size; i++) {
+        const NetworkStorage* device = devices[i];
+
+        if (device != nullptr && device->getSpeed() < minSpeed) {
+            const string name = device->getName();
+            const int capacity = device->getCapacity();
+
+            delete device;
+        }
+    }`;
 
     const lexer = new Lexer(input);
     const parser = new Parser(lexer.tokenize());

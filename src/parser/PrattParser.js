@@ -32,6 +32,8 @@ const INFIX_OPERATORS = {
 const POSTFIX_OPERATORS = {
     '--': { precedence: 8 },
     '++': { precedence: 8 },
+    '->': { precedence: 9 },
+    '.': { precedence: 9 },
 };
 
 export class PrattParser {
@@ -53,7 +55,7 @@ export class PrattParser {
         const next = this.next();
 
         if (!next) throw new Error(`Expected token: "${type}" (${text ?? 'Any'}), but nothing was found`);
-        if (next.type !== type) throw new Error(`Expected type ${type}, got ${next.type}`);
+        if (next.type !== type) throw new Error(`Expected type ${type}, got ${next.type} (${next.text})`);
         if (text !== null && next.text !== text) throw new Error(`Expected '${text}', got '${next.text}'`);
 
         return next;
@@ -104,24 +106,6 @@ export class PrattParser {
                 continue;
             }
 
-            if (token.type === TokenType.DOT) {
-                const memberPrecedence = this.getPostfixPrecedence();
-                if (memberPrecedence <= minPrecedence) break;
-
-                this.next(true);
-                left = this.parseMember(left);
-                continue;
-            }
-
-            if (token.type === TokenType.ARROW) {
-                const ptrMemberPrecedence = this.getPostfixPrecedence();
-                if (ptrMemberPrecedence <= minPrecedence) break;
-
-                this.next(true);
-                left = this.parsePtrMember(left);
-                continue;
-            }
-
             if (!this.isInfix(token)) break;
 
             const infixInfo = INFIX_OPERATORS[token.text];
@@ -166,28 +150,6 @@ export class PrattParser {
         };
     }
 
-    parseMember(left) {
-        const memberName = this.expect(TokenType.IDENT);
-
-        return {
-            nodeType: 'EXPRESSION',
-            type: 'MEMBER_EXPRESSION',
-            owner: left,
-            name: memberName.text,
-        };
-    }
-
-    parsePtrMember(left) {
-        const memberName = this.expect(TokenType.IDENT);
-
-        return {
-            nodeType: 'EXPRESSION',
-            type: 'PTR_MEMBER_EXPRESSION',
-            object: left,
-            name: memberName.text,
-        };
-    }
-
     parsePostfix(left, token) {
         // left++
         if (token.text === '++') {
@@ -204,6 +166,28 @@ export class PrattParser {
                 nodeType: 'EXPRESSION',
                 type: 'POST_DECREMENT_EXPRESSION',
                 expr: left,
+            };
+        }
+
+        if (token.text === ".") {
+            const memberName = this.expect(TokenType.IDENT);
+
+            return {
+                nodeType: 'EXPRESSION',
+                type: 'MEMBER_EXPRESSION',
+                owner: left,
+                name: memberName.text,
+            };
+        }
+
+        if (token.text === '->') {
+            const memberName = this.expect(TokenType.IDENT);
+
+            return {
+                nodeType: 'EXPRESSION',
+                type: 'PTR_MEMBER_EXPRESSION',
+                object: left,
+                name: memberName.text,
             };
         }
     }
@@ -296,6 +280,14 @@ export class PrattParser {
             return {
                 nodeType: 'EXPRESSION',
                 type: 'IDENT_EXPRESSION',
+                value: token.text,
+            };
+        }
+
+        if (token.type === TokenType.NULLPTR) {
+            return {
+                nodeType: 'EXPRESSION',
+                type: 'NULLPTR_EXPRESSION',
                 value: token.text,
             };
         }

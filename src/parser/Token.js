@@ -7,6 +7,8 @@ export const TokenType = {
     ELSE: 'ELSE',
     FOR: 'FOR',
     WHILE: 'WHILE',
+    DELETE: 'DELETE',
+    NULLPTR: 'NULLPTR',
 
     L_PAREN: '(',
     R_PAREN: ')',
@@ -18,16 +20,13 @@ export const TokenType = {
     SEMI: ';',
     COMMA: ',',
 
-    DOT: '.',
-    ARROW: '->',
-
     OP: 'OP',
     EOF: 'EOF',
 };
 
 export class Token {
     constructor(type, text) {
-        this.objectType = "Token";
+        this.nodeType = "Token";
         this.type = type;
         this.text = text;
     }

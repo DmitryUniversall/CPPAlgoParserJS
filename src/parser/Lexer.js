@@ -5,6 +5,8 @@ const KEYWORDS = {
     else: TokenType.ELSE,
     for: TokenType.FOR,
     while: TokenType.WHILE,
+    delete: TokenType.DELETE,
+    nullptr: TokenType.NULLPTR,
 };
 
 const OPERATORS = ['->', '==', '!=', '<=', '>=', '&&', '||', '++', '--', '+', '-', '*', '/', '=', '<', '>', '&'].sort((a, b) => b.length - a.length);
@@ -15,7 +17,6 @@ const SIGN_TOKENS = [
     TokenType.R_BRACE,
     TokenType.SEMI,
     TokenType.COMMA,
-    TokenType.DOT,
     TokenType.L_BRACKET,
     TokenType.R_BRACKET,
 ];
