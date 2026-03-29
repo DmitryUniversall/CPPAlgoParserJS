@@ -9,6 +9,7 @@ const SINGLE_TOKENS = [
     TokenType.R_PAREN,
     TokenType.L_BRACE,
     TokenType.R_BRACE,
+    TokenType.COL,
     TokenType.SEMI,
     TokenType.COMMA,
     TokenType.L_BRACKET,

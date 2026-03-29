@@ -23,6 +23,8 @@ export const OPERATORS = {
 
     SHL: { type: 'SHL', literal: '<<', infix: { precedence: 5 } },
     SHR: { type: 'SHR', literal: '>>', infix: { precedence: 5 } },
+
+    TERN: { literal: '?', infix: { precedence: 2, assoc: 'right' } },
 };
 
 export const operatorLiteralsMap = Object.entries(OPERATORS).reduce((acc, [_, operator]) => {

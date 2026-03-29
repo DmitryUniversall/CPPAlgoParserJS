@@ -100,6 +100,25 @@ export class PrattParser {
                 continue;
             }
 
+            if (token.type === TokenType.OP && token.text === OPERATORS.TERN.literal) {
+                const ternPrecedence = OPERATORS.TERN.infix.precedence;
+                if (ternPrecedence <= minPrecedence) break;
+
+                this.next(true);
+
+                const thenExpression = this.parseExpression(OPERATORS.TERN.infix.precedence - 1);
+                this.expect(TokenType.COL)
+                const elseExpression = this.parseExpression(OPERATORS.TERN.infix.precedence - 1);
+
+                return {
+                    nodeType: 'EXPRESSION',
+                    type: 'TERNARY_EXPRESSION',
+                    condition: left,
+                    then: thenExpression,
+                    else: elseExpression,
+                };
+            }
+
             if (!this.isInfix(token)) break;
 
             const infixInfo = INFIX_OPERATORS[token.text];
@@ -172,7 +191,7 @@ export class PrattParser {
 
         return {
             nodeType: 'TYPE',
-            type: 'TYPE_EXPRESSION',
+            type: 'TYPE',
             typeName: typeToken.text,
             prefixModifiers: prefixModifiers,
             typeParameters: typeParameters,

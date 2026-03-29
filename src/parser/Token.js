@@ -12,6 +12,7 @@ export const TokenType = {
     L_BRACKET: '[',
     R_BRACKET: ']',
 
+    COL: ':',
     SEMI: ';',
     COMMA: ',',
 
