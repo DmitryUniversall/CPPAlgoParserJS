@@ -20,9 +20,12 @@ export const OPERATORS = {
     ASSIGN: { type: 'ASSIGN', literal: '=', infix: { precedence: 1, assoc: 'right' } },
     ARROW: { type: 'ARROW', literal: '->', postfix: { precedence: 9 } },
     DOT: { type: 'DOT', literal: '.', postfix: { precedence: 9 } },
+
+    SHL: { type: 'SHL', literal: '<<', infix: { precedence: 5 } },
+    SHR: { type: 'SHR', literal: '>>', infix: { precedence: 5 } },
 };
 
-export const operatorLiteralsMap = Object.entries(OPERATORS).reduce((acc, [_, config]) => {
-    acc[config.literal] = config;
+export const operatorLiteralsMap = Object.entries(OPERATORS).reduce((acc, [_, operator]) => {
+    acc[operator.literal] = operator;
     return acc;
 }, {});

@@ -1,6 +1,7 @@
 import { TokenType } from './Token.js';
 import { PrattParser } from './PrattParser.js';
 import { KEYWORDS } from './lexer/keywords.js';
+import { OPERATORS } from './lexer/operators.js';
 
 export class Parser {
     constructor(tokens) {
@@ -28,48 +29,23 @@ export class Parser {
         return next;
     }
 
-    isPointerOrRef(token) {
-        if (!token) return null;
-        return token.text === '*' || token.text === '&';
-    }
-
-    isTypeModifier(token) {
-        if (!token) return null;
-        return ['const', 'static', 'unsigned', 'signed', 'long', 'short'].includes(token.text);
-    }
-
     isDeclarationStart() {
         let pointer = this.position;
 
-        while (this.isTypeModifier(this.tokens[pointer])) pointer++;
-
-        // Expect type name
-        if (this.tokens[pointer].type !== TokenType.IDENT) return false;
-        pointer++;
-
-        pointer = this.skipAngleBrackets(pointer);
-        while (this.isPointerOrRef(this.tokens[pointer])) pointer++;
+        try {
+            const parser = new PrattParser(this.tokens.slice(this.position));
+            parser.parseTypeExpression()
+            pointer += parser.position;
+        } catch (e) {
+            // console.debug(e);
+            return false;
+        }
 
         // Expect var name
         // noinspection RedundantIfStatementJS
-        if (this.tokens[pointer].type !== TokenType.IDENT) return false;
+        if (!this.tokens[pointer] || this.tokens[pointer].type !== TokenType.IDENT) return false;
 
         return true;
-    }
-
-    skipAngleBrackets(index) {
-        let depth = 0;
-
-        while (index < this.tokens.length) {
-            if (this.tokens[index].text === '<') depth++;
-            if (this.tokens[index].text === '>') depth--;
-
-            if (depth === 0) break;
-
-            index++;
-        }
-
-        return index;
     }
 
     parseProgram() {
@@ -87,13 +63,13 @@ export class Parser {
 
         const token = this.peek(true);
         if (token.type === TokenType.L_BRACE) return this.parseBlockStatement();
-        if (token.type === TokenType.KEYWORD) return this.parseKeywordStatement(token);
+        if (token.type === TokenType.KEYWORD) return this.parseKeywordStatement();
 
         return this.parseExpressionStatement();
     }
 
-    parseKeywordStatement(token) {
-        this.expect(TokenType.KEYWORD);
+    parseKeywordStatement() {
+        const token = this.expect(TokenType.KEYWORD);
 
         if (token.text === KEYWORDS.IF.literal) return this.parseIfStatement();
         if (token.text === KEYWORDS.WHILE.literal) return this.parseWhileStatement();
@@ -104,25 +80,12 @@ export class Parser {
     }
 
     parseDeclarationStatement(expectSemicolon = true) {
-        const typeModifiers = [];
-        while (this.isTypeModifier(this.peek())) {
-            typeModifiers.push(this.next().text);
-        }
-
-        let typeToken = this.expect(TokenType.IDENT);
-
-        const typeParametersEnd = this.skipAngleBrackets(this.position);
-        const typeParameterTokens = this.tokens.slice(this.position, typeParametersEnd);
-        this.position = typeParametersEnd;
-
-        while (this.isPointerOrRef(this.peek())) {
-            typeParameterTokens.push(this.next().text);
-        }
+        let typeExpression = this.parseTypeExpression();
 
         let varNameToken = this.expect(TokenType.IDENT);
 
         let initExpression = null;
-        if (this.peek().text === '=') {
+        if (this.peek()?.text === OPERATORS.ASSIGN.literal) {
             this.next();
             initExpression = this.parseExpression();
         }
@@ -132,9 +95,7 @@ export class Parser {
         return {
             nodeType: 'STATEMENT',
             type: 'DECLARATION_STATEMENT',
-            modifiers: typeModifiers,
-            varType: typeToken.text,
-            typeParameters: typeParameterTokens,
+            varTypeExpr: typeExpression,
             name: varNameToken.text,
             init: initExpression,
         };
@@ -210,7 +171,7 @@ export class Parser {
         };
     }
 
-    parseForStatement() {
+    parseForStatement() {  // TODO: Support 'for(;;)'
         this.expect(TokenType.L_PAREN);
 
         const init = this.isDeclarationStart() ? this.parseDeclarationStatement(false) : this.parseExpression();
@@ -247,8 +208,15 @@ export class Parser {
     }
 
     parseExpression() {
-        const parser = new PrattParser(this.tokens.slice(this.position));
+        const parser = new PrattParser(this.tokens.slice(this.position)); // TODO: pass by ref + pass offset
         const expression = parser.parseExpression();
+        this.position += parser.position;
+        return expression;
+    }
+
+    parseTypeExpression() {
+        const parser = new PrattParser(this.tokens.slice(this.position));
+        const expression = parser.parseTypeExpression();
         this.position += parser.position;
         return expression;
     }

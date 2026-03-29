@@ -5,9 +5,10 @@ export const KEYWORDS = {
     WHILE: { type: 'WHILE', literal: 'while' },
     DELETE: { type: 'DELETE', literal: 'delete' },
     NULLPTR: { type: 'NULLPTR', literal: 'nullptr' },
+    NEW: { type: 'NEW', literal: 'new' },
 };
 
-export const keywordLiteralsMap = Object.entries(KEYWORDS).reduce((acc, [_, config]) => {
-    acc[config.literal] = config;
+export const keywordLiteralsMap = Object.entries(KEYWORDS).reduce((acc, [_, keyword]) => {
+    acc[keyword.literal] = keyword;
     return acc;
 }, {});
