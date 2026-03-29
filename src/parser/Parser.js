@@ -8,25 +8,32 @@ export class Parser {
     }
 
     peek() {
-        return this.tokens[this.position];
+        return this.position < this.tokens.length ? this.tokens[this.position] : null;
     }
 
-    next() {
-        return this.tokens[this.position++];
+    next(required = false) {
+        if (this.position >= this.tokens.length && required) throw new Error('Next token is required, but was not found');
+        return this.position < this.tokens.length ? this.tokens[this.position++] : null;
     }
 
     expect(type, text = null) {
         const next = this.next();
 
-        if (next.type !== type) {
-            throw new Error(`Expected token with type '${type}', got '${next.type}' (${next.text})`);
-        }
-
-        if (text !== null && next.text !== text) {
-            throw new Error(`Expected token '${text}', got '${next.text}'`);
-        }
+        if (!next) throw new Error(`Expected token: "${type}" (${text ?? 'Any'}), but nothing was found`);
+        if (next.type !== type) throw new Error(`Expected type ${type}, got ${next.type}`);
+        if (text !== null && next.text !== text) throw new Error(`Expected '${text}', got '${next.text}'`);
 
         return next;
+    }
+
+    isPointerOrRef(token) {
+        if (!token) return null;
+        return token.text === '*' || token.text === '&';
+    }
+
+    isTypeModifier(token) {
+        if (!token) return null;
+        return ['const', 'static', 'unsigned', 'signed', 'long', 'short'].includes(token.text);
     }
 
     isDeclarationStart() {
@@ -48,33 +55,25 @@ export class Parser {
         return true;
     }
 
-    skipAngleBrackets(i) {
+    skipAngleBrackets(index) {
         let depth = 0;
 
-        while (i < this.tokens.length) {
-            if (this.tokens[i].text === '<') depth++;
-            if (this.tokens[i].text === '>') depth--;
+        while (index < this.tokens.length) {
+            if (this.tokens[index].text === '<') depth++;
+            if (this.tokens[index].text === '>') depth--;
 
             if (depth === 0) break;
 
-            i++;
+            index++;
         }
 
-        return i;
-    }
-
-    isPointerOrRef(token) {
-        return token.text === '*' || token.text === '&';
-    }
-
-    isTypeModifier(token) {
-        return ['const', 'static', 'unsigned', 'signed', 'long', 'short'].includes(token.text);
+        return index;
     }
 
     parseProgram() {
         const nodes = [];
 
-        while (this.peek().type !== TokenType.EOF) {
+        while (this.peek()?.type !== TokenType.EOF) {
             nodes.push(this.parseStatement());
         }
 
@@ -82,9 +81,9 @@ export class Parser {
     }
 
     parseStatement() {
-        const token = this.peek();
-
         if (this.isDeclarationStart()) return this.parseDeclaration();
+
+        const token = this.peek();
         if (token.type === TokenType.IF) return this.parseIfStatement();
         if (token.type === TokenType.WHILE) return this.parseWhileStatement();
         if (token.type === TokenType.FOR) return this.parseForStatement();
@@ -95,10 +94,8 @@ export class Parser {
 
     parseDeclaration(expectSemicolon = true) {
         const typeModifiers = [];
-        let current = this.peek();
-        while (this.isTypeModifier(current)) {
-            typeModifiers.push(current.text);
-            current = this.next();
+        while (this.isTypeModifier(this.peek())) {
+            typeModifiers.push(this.next().text);
         }
 
         let typeToken = this.expect(TokenType.IDENT);
@@ -107,10 +104,8 @@ export class Parser {
         const typeParameterTokens = this.tokens.slice(this.position, typeParametersEnd);
         this.position = typeParametersEnd;
 
-        current = this.peek();
-        while (this.isPointerOrRef(current)) {
-            typeParameterTokens.push(current.text);
-            current = this.next();
+        while (this.isPointerOrRef(this.peek())) {
+            typeParameterTokens.push(this.next().text);
         }
 
         let varNameToken = this.expect(TokenType.IDENT);
@@ -121,9 +116,7 @@ export class Parser {
             initExpression = this.parseExpression();
         }
 
-        if (expectSemicolon) {
-            this.expect(TokenType.SEMI);
-        }
+        if (expectSemicolon) this.expect(TokenType.SEMI);
 
         return {
             nodeType: 'STATEMENT',
@@ -140,11 +133,12 @@ export class Parser {
         this.expect(TokenType.L_BRACE);
 
         const body = [];
-        while (this.peek().type !== TokenType.R_BRACE) {
+        while (this.peek()?.type !== TokenType.R_BRACE) {
             body.push(this.parseStatement());
         }
 
         this.expect(TokenType.R_BRACE);
+
         return {
             nodeType: 'STATEMENT',
             type: 'BLOCK_STATEMENT',
@@ -154,16 +148,19 @@ export class Parser {
 
     parseIfStatement() {
         this.expect(TokenType.IF);
+
         this.expect(TokenType.L_PAREN);
-        const condition = this.parseExpression();
+        const condition = this.parseExpression();  // TODO: Validate
         this.expect(TokenType.R_PAREN);
 
         const then = this.parseStatement();
+        if (then.type !== "BLOCK_STATEMENT") throw new Error(`Expected block statement after 'if (...)'. Got: ${then.type}`);
 
         let else_ = null;
         if (this.peek() === TokenType.ELSE) {
             this.expect(TokenType.ELSE);
             else_ = this.parseStatement();
+            if (else_.type !== 'BLOCK_STATEMENT') throw new Error(`Expected block statement after 'else'. Got: ${else_.type}`);
         }
 
         return {
@@ -177,11 +174,13 @@ export class Parser {
 
     parseWhileStatement() {
         this.expect(TokenType.WHILE);
+
         this.expect(TokenType.L_PAREN);
-        const condition = this.parseExpression();
+        const condition = this.parseExpression();  // TODO: Validate
         this.expect(TokenType.R_PAREN);
 
         const body = this.parseStatement();
+        if (body.type !== 'BLOCK_STATEMENT') throw new Error(`Expected block statement after 'while (...)'. Got: ${body.type}`);
 
         return {
             nodeType: 'STATEMENT',
@@ -193,36 +192,35 @@ export class Parser {
 
     parseForStatement() {
         this.expect(TokenType.FOR);
+
         this.expect(TokenType.L_PAREN);
 
-        let initExpression;
-        if (this.isDeclarationStart()) {
-            initExpression = this.parseDeclaration(false);
-        } else {
-            initExpression = this.parseExpression();
-        }
+        const init = this.isDeclarationStart() ? this.parseDeclaration(false) : this.parseExpression();
+        this.expect(TokenType.SEMI);
+        const condition = this.parseExpression();
+        this.expect(TokenType.SEMI);
+        const step = this.parseExpression();
 
-        this.expect(TokenType.SEMI);
-        const conditionExpression = this.parseExpression();
-        this.expect(TokenType.SEMI);
-        const stepExpression = this.parseExpression();
         this.expect(TokenType.R_PAREN);
 
         const body = this.parseStatement();
+        if (body.type !== 'BLOCK_STATEMENT') throw new Error(`Expected block statement after 'for (...)'. Got: ${body.type}`);
 
         return {
             nodeType: 'STATEMENT',
             type: 'FOR_STATEMENT',
-            init: initExpression,
-            condition: conditionExpression,
-            step: stepExpression,
+            init: init,
+            condition: condition,
+            step: step,
             body: body,
         };
     }
 
     parseExpressionStatement() {
         const expr = this.parseExpression();
+
         this.expect(TokenType.SEMI);
+
         return {
             nodeType: 'STATEMENT',
             type: 'EXPRESSION_STATEMENT',

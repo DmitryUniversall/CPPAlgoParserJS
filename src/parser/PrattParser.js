@@ -41,23 +41,20 @@ export class PrattParser {
     }
 
     peek() {
-        return this.tokens[this.position];
+        return this.position < this.tokens.length ? this.tokens[this.position] : null;
     }
 
-    next() {
-        return this.tokens[this.position++];
+    next(required = false) {
+        if (this.position >= this.tokens.length && required) throw new Error("Next token is required, but was not found");
+        return this.position < this.tokens.length ? this.tokens[this.position++] : null;
     }
 
     expect(type, text = null) {
         const next = this.next();
 
-        if (next.type !== type) {
-            throw new Error(`Expected type ${type}, got ${next.type}`);
-        }
-
-        if (text !== null && next.text !== text) {
-            throw new Error(`Expected '${text}', got '${next.text}'`);
-        }
+        if (!next) throw new Error(`Expected token: "${type}" (${text ?? 'Any'}), but nothing was found`);
+        if (next.type !== type) throw new Error(`Expected type ${type}, got ${next.type}`);
+        if (text !== null && next.text !== text) throw new Error(`Expected '${text}', got '${next.text}'`);
 
         return next;
     }
@@ -75,7 +72,7 @@ export class PrattParser {
     }
 
     parseExpression(minPrecedence = 0) {
-        let left = this.parsePrefix(this.next());
+        let left = this.parsePrefix(this.next(true));
 
         while (true) {
             let token = this.peek();
@@ -84,7 +81,7 @@ export class PrattParser {
                 const postfixPrecedence = POSTFIX_OPERATORS[token.text].precedence;
                 if (postfixPrecedence <= minPrecedence) break;
 
-                token = this.next();
+                token = this.next(true);
                 left = this.parsePostfix(left, token);
                 continue;
             }
@@ -93,7 +90,7 @@ export class PrattParser {
                 const callPrecedence = this.getPostfixPrecedence();
                 if (callPrecedence <= minPrecedence) break;
 
-                this.next();
+                this.next(true);
                 left = this.parseCall(left);
                 continue;
             }
@@ -102,7 +99,7 @@ export class PrattParser {
                 const indexPrecedence = this.getPostfixPrecedence();
                 if (indexPrecedence <= minPrecedence) break;
 
-                this.next();
+                this.next(true);
                 left = this.parseIndex(left);
                 continue;
             }
@@ -111,7 +108,7 @@ export class PrattParser {
                 const memberPrecedence = this.getPostfixPrecedence();
                 if (memberPrecedence <= minPrecedence) break;
 
-                this.next();
+                this.next(true);
                 left = this.parseMember(left);
                 continue;
             }
@@ -120,7 +117,7 @@ export class PrattParser {
                 const ptrMemberPrecedence = this.getPostfixPrecedence();
                 if (ptrMemberPrecedence <= minPrecedence) break;
 
-                this.next();
+                this.next(true);
                 left = this.parsePtrMember(left);
                 continue;
             }
@@ -130,7 +127,7 @@ export class PrattParser {
             const infixInfo = INFIX_OPERATORS[token.text];
             if (infixInfo.precedence <= minPrecedence) break;
 
-            token = this.next();
+            token = this.next(true);
             left = this.parseInfix(left, token, infixInfo);
         }
 
@@ -140,12 +137,12 @@ export class PrattParser {
     parseCall(left) {
         const args = [];
 
-        if (this.peek().type !== TokenType.R_PAREN) {
+        if (this.peek()?.type !== TokenType.R_PAREN) {
             while (true) {
                 args.push(this.parseExpression());
 
-                if (this.peek().type !== TokenType.COMMA) break;
-                this.next();
+                if (this.peek()?.type !== TokenType.COMMA) break;
+                this.next(true);
             }
         }
 
@@ -164,7 +161,7 @@ export class PrattParser {
         return {
             nodeType: 'EXPRESSION',
             type: 'INDEX_EXPRESSION',
-            owner : left,
+            owner: left,
             expr: expression,
         };
     }
