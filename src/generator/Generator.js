@@ -221,6 +221,9 @@ export default class Generator {
             case 'NUMBER_EXPRESSION':
                 return expression.value;
 
+            case 'NEGATE_EXPRESSION':
+                return '-' + this.generateExpression(expression.expr);
+
             case 'STRING_LITERAL_EXPRESSION':
                 return `"${expression.value}"`;
 
@@ -249,6 +252,9 @@ export default class Generator {
 
             case 'DEREF_EXPRESSION':
                 return 'Взятие ссылки у указателя ' + this.generateExpression(expression.expr);
+
+            case 'ADDRESS_EXPRESSION':
+                return 'взятие адреса объекта ' + this.generateExpression(expression.expr);
 
             case 'CALL_EXPRESSION':
                 return this.generateCallExpression(expression);
