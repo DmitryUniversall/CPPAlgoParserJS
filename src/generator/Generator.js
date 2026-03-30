@@ -149,10 +149,12 @@ export default class Generator {
         const varType = statement.varTypeExpr.prefixModifiers.includes('const') ? 'константы' : 'переменной';
 
         return statement.declarations.map((declaration) => {
+            const arrayString = !!declaration.arrayLengthExpr ? `массив длинной ${this.generateExpression(declaration.arrayLengthExpr)}` : '';
+
             if (declaration.init) {
                 return new Row(
                     ++this.rowNumber,
-                    `инициализация ${varType} ${declaration.name} типа ${type} значением ${this.generateExpression(declaration.init)}`,
+                    `инициализация ${varType} ${declaration.name}${arrayString.length !== 0 ? ` (${arrayString})` : ''} типа ${type} значением ${this.generateExpression(declaration.init)}`,
                     this.rowNumber + 1,
                     null,
                     null,
@@ -160,7 +162,14 @@ export default class Generator {
                 );
             }
 
-            return new Row(++this.rowNumber, `объявление ${varType} ${declaration.name} типа ${type}`, this.rowNumber + 1, null, null, null);
+            return new Row(
+                ++this.rowNumber,
+                `объявление ${varType} ${declaration.name}${arrayString.length !== 0 ? ` (${arrayString})` : ''} типа ${type}`,
+                this.rowNumber + 1,
+                null,
+                null,
+                null,
+            );
         });
     }
 
@@ -210,7 +219,7 @@ export default class Generator {
                 return expression.value;
 
             case 'NUMBER_EXPRESSION':
-                return 'число ' + expression.value;
+                return expression.value;
 
             case 'STRING_LITERAL_EXPRESSION':
                 return `"${expression.value}"`;
@@ -223,8 +232,23 @@ export default class Generator {
                 if (this.isOutputExpression(expression)) return 'Вывод: ' + this.getOutputVarsFromExpression(expression, []).join(' + ');
                 return this.generateExpression(expression.left) + ' ' + expression.operator + ' ' + this.generateExpression(expression.right);
 
+            case 'TERNARY_EXPRESSION':
+                return `условие если ${this.generateExpression(expression.condition)} то ${this.generateExpression(expression.thenExpr)} иначе ${this.generateExpression(expression.elseExpr)}`;
+
+            case 'PREFIX_INCREMENT_EXPRESSION':
+                return 'увеличение ' + this.generateExpression(expression.expr);
+
             case 'POSTFIX_INCREMENT_EXPRESSION':
                 return 'увеличение ' + this.generateExpression(expression.expr);
+
+            case 'PREFIX_DECREMENT_EXPRESSION':
+                return 'уменьшение ' + this.generateExpression(expression.expr);
+
+            case 'POSTFIX_DECREMENT_EXPRESSION':
+                return 'уменьшение ' + this.generateExpression(expression.expr);
+
+            case 'DEREF_EXPRESSION':
+                return 'Взятие ссылки у указателя ' + this.generateExpression(expression.expr);
 
             case 'CALL_EXPRESSION':
                 return this.generateCallExpression(expression);

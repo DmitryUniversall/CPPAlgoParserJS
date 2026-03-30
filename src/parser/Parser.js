@@ -93,7 +93,14 @@ export class Parser {
                 initExpression = this.parseExpression();
             }
 
-            declarations.push({ name: name, init: initExpression });
+            let arrayLengthExpr = null;
+            if (this.peek()?.type === TokenType.L_BRACKET) {
+                this.expect(TokenType.L_BRACKET);
+                arrayLengthExpr = this.parseExpression();
+                this.expect(TokenType.R_BRACKET);
+            }
+
+            declarations.push({ name: name, init: initExpression, arrayLengthExpr: arrayLengthExpr });
 
             if (this.peek()?.type !== TokenType.COMMA) break;
             this.expect(TokenType.COMMA);

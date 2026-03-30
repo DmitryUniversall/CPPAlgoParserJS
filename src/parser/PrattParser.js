@@ -114,8 +114,8 @@ export class PrattParser {
                     nodeType: 'EXPRESSION',
                     type: 'TERNARY_EXPRESSION',
                     condition: left,
-                    then: thenExpression,
-                    else: elseExpression,
+                    thenExpr: thenExpression,
+                    elseExpr: elseExpression,
                 };
             }
 
@@ -280,7 +280,7 @@ export class PrattParser {
         }
 
         // &obj
-        if (token.text === OPERATORS.AND.literal) {
+        if (token.text === OPERATORS.AMPERSAND.literal) {
             return {
                 nodeType: 'EXPRESSION',
                 type: 'ADDRESS_EXPRESSION',

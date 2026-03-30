@@ -76,7 +76,52 @@ function main() {
     cout << device.test << endl;
     cout << device->test << endl;
     cout << device.getTest() << endl;
-`;
+    
+    const MyVector<int>* ptr = new MyVector<int>(10, 0);
+
+    int a = 1, b = 2, c;
+    c = a + b * 3;
+    
+    int arr[10];
+    arr[0] = c;
+    
+    if (c > 10 && a != b) {
+        ptr->push_back(c);
+    } else {
+        ptr->push_back(a + b);
+    }
+    
+    for (int i = 0; i < 5; i++) {
+        arr[i] = i << 1;
+    }
+    
+    while (a < 100) {
+        a = a + (b > 5 ? b : 1);
+        ++a;
+    }
+    
+    int* x = &a;
+    int y = *x;
+    
+    y = (a > b) ? a : b;
+    
+    MyObject obj;
+    obj.value = y;
+    obj.increment();
+    
+    MyObject* objPtr = new MyObject();
+    objPtr->value = obj.value;
+    objPtr->increment();
+    
+    int result = objPtr->getValue() + obj.getValue();
+    
+    int z = (a = b = 5);
+    
+    string message = "Hello world";
+    
+    delete ptr;
+    delete objPtr;
+`; //int arr[5]; int* x = &a;
 
     const lexer = new Lexer(input);
     const parser = new Parser(lexer.tokenize());

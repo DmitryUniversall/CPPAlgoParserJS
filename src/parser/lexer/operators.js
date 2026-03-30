@@ -15,7 +15,7 @@ export const OPERATORS = {
 
     AND: { type: 'AND', literal: '&&', infix: { precedence: 3 } },
     OR: { type: 'OR', literal: '||', infix: { precedence: 2 } },
-    BIT_AND: { type: 'BIT_AND', literal: '&', prefix: { precedence: 8 } },
+    AMPERSAND: { type: 'AMPERSAND', literal: '&', prefix: { precedence: 8 } },
 
     ASSIGN: { type: 'ASSIGN', literal: '=', infix: { precedence: 1, assoc: 'right' } },
     ARROW: { type: 'ARROW', literal: '->', postfix: { precedence: 9 } },
