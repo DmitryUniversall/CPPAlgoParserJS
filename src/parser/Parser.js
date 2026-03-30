@@ -158,8 +158,8 @@ export class Parser {
             nodeType: 'STATEMENT',
             type: 'IF_STATEMENT',
             condition: condition,
-            then: then,
-            else: else_,
+            thenBody: then,
+            elseBody: else_,
         };
     }
 
@@ -212,7 +212,7 @@ export class Parser {
         return {
             nodeType: 'STATEMENT',
             type: 'EXPRESSION_STATEMENT',
-            expr,
+            expr: expr,
         };
     }
 

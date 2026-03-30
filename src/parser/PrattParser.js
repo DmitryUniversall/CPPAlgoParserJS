@@ -237,7 +237,7 @@ export class PrattParser {
             return {
                 nodeType: 'EXPRESSION',
                 type: 'PTR_MEMBER_EXPRESSION',
-                object: left,
+                owner: left,
                 name: memberName.text,
             };
         }

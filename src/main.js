@@ -1,12 +1,13 @@
 import Lexer from './parser/lexer/Lexer.js';
 import { Parser } from './parser/Parser.js';
+import Generator from './generator/Generator.js';
 
 function main() {
     const input = `
     int n;
     cin >> n;
 
-    vector<NetworkStorage*> devices;
+    const vector<const NetworkStorage*> devices;
 
     for (int i = 0; i < n; i++)
     {
@@ -71,12 +72,39 @@ function main() {
         }
 
         delete device;
-    }`;
+    }
+    cout << device.test << endl;
+    cout << device->test << endl;
+    cout << device.getTest() << endl;
+`;
 
     const lexer = new Lexer(input);
     const parser = new Parser(lexer.tokenize());
     const result = parser.parseProgram();
-    console.log(result);
+    // console.log(result);
+
+    const generator = new Generator(result);
+    const generated = generator.generate();
+    // console.log(generated);
+
+    const w = { num: 5, cond: 100, act: 150, next: 10 };
+    for (let row of generated) {
+        console.log(
+            `${(!!row.number ? row.number : -1).toString().padEnd(w.num)} | ` +
+                `${(!!row.condition ? row.condition : 'null').padEnd(w.cond)} | ` +
+                `${(!!row.action ? row.action : 'null').padEnd(w.act)} | ` +
+                `${(!!row.next ? row.next : -1).toString().padEnd(w.next)}`,
+        );
+
+        if (row.subrow) {
+            console.log(
+                `${' '.padEnd(w.num)} | ` +
+                    `${(!!row.subrow.condition ? row.subrow.condition : 'null').padEnd(w.cond)} | ` +
+                    `${(!!row.subrow.action ? row.subrow.action : 'null').padEnd(w.act)} | ` +
+                    `${(!!row.subrow.next ? row.subrow.next : -1).toString().padEnd(w.next)}`,
+            );
+        }
+    }
 }
 
 main();
