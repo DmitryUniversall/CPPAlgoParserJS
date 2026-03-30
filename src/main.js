@@ -1,8 +1,9 @@
 import Lexer from './parser/lexer/Lexer.js';
-import { Parser } from './parser/Parser.js';
+import Parser from './parser/Parser.js';
 import Generator from './generator/Generator.js';
 
 function main() {
+    // noinspection CheckDtdRefs
     const input = `
     int n;
     cin >> n;

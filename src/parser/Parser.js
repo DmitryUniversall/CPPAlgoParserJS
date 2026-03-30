@@ -3,7 +3,7 @@ import { PrattParser } from './PrattParser.js';
 import { KEYWORDS } from './lexer/keywords.js';
 import { OPERATORS } from './lexer/operators.js';
 
-export class Parser {
+export default class Parser {
     constructor(tokens) {
         this.tokens = tokens;
         this.position = 0;
