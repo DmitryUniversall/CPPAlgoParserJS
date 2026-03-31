@@ -122,6 +122,8 @@ function main() {
     
     delete ptr;
     delete objPtr;
+
+    object.x = new NetworkStorage(name, speed, capacity);
 `; //int arr[5]; int* x = &a;
 
     const lexer = new Lexer(input);

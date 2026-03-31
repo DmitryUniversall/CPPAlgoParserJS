@@ -221,14 +221,14 @@ export default class Generator {
             case 'NUMBER_EXPRESSION':
                 return expression.value;
 
-            case 'NEGATE_EXPRESSION':
-                return '-' + this.generateExpression(expression.expr);
+            case 'KEYWORD_EXPRESSION':
+                return expression.keyword.literal;
 
             case 'STRING_LITERAL_EXPRESSION':
                 return `"${expression.value}"`;
 
-            case 'KEYWORD_EXPRESSION':
-                return expression.keyword.literal;
+            case 'NEGATE_EXPRESSION':
+                return `- ${this.generateExpression(expression.expr)}`;
 
             case 'BINARY_OPERATION_EXPRESSION':
                 if (this.isInputExpression(expression)) return 'Ввод: ' + this.getInputVarsFromExpression(expression, []).join(', ');
@@ -251,7 +251,7 @@ export default class Generator {
                 return 'уменьшение ' + this.generateExpression(expression.expr);
 
             case 'DEREF_EXPRESSION':
-                return 'Взятие ссылки у указателя ' + this.generateExpression(expression.expr);
+                return 'взятие ссылки указателя ' + this.generateExpression(expression.expr);
 
             case 'ADDRESS_EXPRESSION':
                 return 'взятие адреса объекта ' + this.generateExpression(expression.expr);
@@ -266,13 +266,15 @@ export default class Generator {
                 return this.generateExpression(expression.owner) + '->' + expression.name;
 
             case 'INDEX_EXPRESSION':
-                return 'элемент ' + this.generateExpression(expression.owner) + ' по индексу ' + this.generateExpression(expression.expr);
+                return 'элемент объекта ' + this.generateExpression(expression.owner) + ' по индексу ' + this.generateExpression(expression.expr);
 
             case 'NEW_EXPRESSION':
-                return 'создание объекта ' + this.generateType(expression.typeExpr);
+                return `Выделение памяти под объект типа ${this.generateType(expression.called.typeExpr)} и получение указателя на неё`;
 
             case 'ASSIGNMENT_EXPRESSION':
-                return 'присваивание ' + this.generateExpression(expression.left) + ' = ' + this.generateExpression(expression.right);
+                if (expression.left.type === 'MEMBER_EXPRESSION')
+                    return `присваивание полю ${expression.left.name} объекта ${this.generateExpression(expression.left.owner)} значения ${this.generateExpression(expression.right)}`;
+                return `присваивание переменной ${this.generateExpression(expression.left)} значения ${this.generateExpression(expression.right)}`;
 
             default:
                 return '[неизвестное выражение]';
@@ -281,6 +283,9 @@ export default class Generator {
 
     generateCallExpression(expression) {
         let args = expression.args.map((it) => this.generateExpression(it)).join(', ');
+
+        if (expression.called.type === 'NEW_EXPRESSION')
+            return `Выделение памяти под объект типа ${this.generateType(expression.called.typeExpr)}, получение указателя и вызов конструктора${args ? ' с параметрами: ' + args : ''} `;
 
         if (['PTR_MEMBER_EXPRESSION', 'MEMBER_EXPRESSION'].includes(expression.called.type)) {
             return (

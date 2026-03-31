@@ -76,7 +76,7 @@ export default class Parser {
         if (token.text === KEYWORDS.FOR.literal) return this.parseForStatement();
         if (token.text === KEYWORDS.DELETE.literal) return this.parseDeleteStatement();
 
-        throw new Error(`Unknown keyword: '${token.text}'`);
+        throw new Error(`Unknown keyword: '${token.text}'`);  // TODO: Unknown keyword 'new'
     }
 
     parseDeclarationStatement(expectSemicolon = true) {
