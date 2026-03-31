@@ -187,8 +187,10 @@ export default class Generator {
 
     isInputExpression(expression) {
         if (expression.type === 'IDENT_EXPRESSION' && expression.value === 'cin') return true;
+        if (expression.type === 'SCOPE_RESOLUTION_EXPRESSION' && expression.name === 'cin') return true;
+
         if (!expression.left) return false;
-        if (expression.left.type !== 'BINARY_OPERATION_EXPRESSION' && expression.left.type !== 'IDENT_EXPRESSION') return false;
+        if (!['BINARY_OPERATION_EXPRESSION', 'IDENT_EXPRESSION', 'SCOPE_RESOLUTION_EXPRESSION'].includes(expression.left.type)) return false;
         if (expression.type === 'BINARY_OPERATION_EXPRESSION' && expression.operator !== OPERATORS.SHR.literal) return false;
         return this.isInputExpression(expression.left);
     }
@@ -203,8 +205,10 @@ export default class Generator {
 
     isOutputExpression(expression) {
         if (expression.type === 'IDENT_EXPRESSION' && expression.value === 'cout') return true;
+        if (expression.type === 'SCOPE_RESOLUTION_EXPRESSION' && expression.name === 'cout') return true;
+
         if (!expression.left) return false;
-        if (expression.left.type !== 'BINARY_OPERATION_EXPRESSION' && expression.left.type !== 'IDENT_EXPRESSION') return false;
+        if (!['BINARY_OPERATION_EXPRESSION', 'IDENT_EXPRESSION', 'SCOPE_RESOLUTION_EXPRESSION'].includes(expression.left.type)) return false;
         if (expression.type === 'BINARY_OPERATION_EXPRESSION' && expression.operator !== OPERATORS.SHL.literal) return false;
         return this.isOutputExpression(expression.left);
     }
@@ -260,10 +264,13 @@ export default class Generator {
                 return this.generateCallExpression(expression);
 
             case 'MEMBER_EXPRESSION':
-                return this.generateExpression(expression.owner) + '.' + expression.name;
+                return `${this.generateExpression(expression.owner)}.${expression.name}`;
 
             case 'PTR_MEMBER_EXPRESSION':
-                return this.generateExpression(expression.owner) + '->' + expression.name;
+                return `${this.generateExpression(expression.owner)}->${expression.name}`;
+
+            case 'SCOPE_RESOLUTION_EXPRESSION':
+                return `${this.generateExpression(expression.scopeExpr)}::${expression.name}`;
 
             case 'INDEX_EXPRESSION':
                 return 'элемент объекта ' + this.generateExpression(expression.owner) + ' по индексу ' + this.generateExpression(expression.expr);

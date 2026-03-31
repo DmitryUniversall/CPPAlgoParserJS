@@ -242,6 +242,16 @@ export class PrattParser {
             };
         }
 
+        if (token.text === OPERATORS.NAMESPACE_ACCESS.literal) {
+            const name = this.expect(TokenType.IDENT);
+            return {
+                nodeType: 'EXPRESSION',
+                type: 'SCOPE_RESOLUTION_EXPRESSION',
+                scopeExpr: left,
+                name: name.text,
+            };
+        }
+
         throw new Error(`Unknown postfix operator: ${token.text}`);
     }
 

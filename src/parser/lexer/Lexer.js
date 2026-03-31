@@ -79,17 +79,17 @@ export default class Lexer {
                 continue;
             }
 
-            const signToken = this.searchForSingleToken();
-            if (signToken) {
-                this.position += signToken.text.length;
-                tokens.push(signToken);
-                continue;
-            }
-
             const op = this.searchForOperator();
             if (op) {
                 this.position += op.text.length;
                 tokens.push(op);
+                continue;
+            }
+
+            const signToken = this.searchForSingleToken();
+            if (signToken) {
+                this.position += signToken.text.length;
+                tokens.push(signToken);
                 continue;
             }
 

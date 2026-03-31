@@ -8,7 +8,7 @@ function main() {
     int n;
     cin >> n;
 
-    const vector<const NetworkStorage*> devices;
+    const vector<const NetworkStorage*> devices(1, 2);
 
     for (int i = 0; i < n; i++)
     {
@@ -124,6 +124,10 @@ function main() {
     delete objPtr;
 
     object.x = new NetworkStorage(name, speed, capacity);
+    sensor.Sensor::change(a, b);
+    std::cout << "test" << endl;
+    std::cin >> test;
+    cout << sensor.Sensor::change(a, b) << endl;
 `; //int arr[5]; int* x = &a;
 
     const lexer = new Lexer(input);

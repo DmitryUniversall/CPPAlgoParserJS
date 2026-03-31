@@ -76,18 +76,22 @@ export default class Parser {
         if (token.text === KEYWORDS.FOR.literal) return this.parseForStatement();
         if (token.text === KEYWORDS.DELETE.literal) return this.parseDeleteStatement();
 
-        throw new Error(`Unknown keyword: '${token.text}'`);  // TODO: Unknown keyword 'new'
+        throw new Error(`Unknown keyword: '${token.text}'`); // TODO: Unknown keyword 'new'
     }
 
     parseDeclarationStatement(expectSemicolon = true) {
-        const typeExpression = this.parseTypeExpression();
-
         const declarations = [];
+
+        const typeExpression = this.parseTypeExpression();
 
         while (true) {
             const name = this.expect(TokenType.IDENT).text;
 
             let initExpression = null;
+            if (this.peek()?.type === TokenType.L_PAREN) {
+                initExpression = this.parseConstructorCall(name);
+            }
+
             if (this.peek()?.text === OPERATORS.ASSIGN.literal) {
                 this.expect(TokenType.OP);
                 initExpression = this.parseExpression();
@@ -235,5 +239,29 @@ export default class Parser {
         const expression = parser.parseTypeExpression();
         this.position += parser.position;
         return expression;
+    }
+
+    parseConstructorCall(name) {
+        this.expect(TokenType.L_PAREN);
+
+        const args = [];
+
+        if (this.peek()?.type !== TokenType.R_PAREN) {
+            while (true) {
+                args.push(this.parseExpression());
+
+                if (this.peek()?.type !== TokenType.COMMA) break;
+                this.next();
+            }
+        }
+
+        this.expect(TokenType.R_PAREN);
+
+        return {
+            nodeType: 'EXPRESSION',
+            type: 'CONSTRUCTOR_CALL_EXPRESSION',
+            className: name,
+            args: args,
+        };
     }
 }
