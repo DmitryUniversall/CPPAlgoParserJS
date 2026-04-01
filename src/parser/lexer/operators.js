@@ -18,6 +18,9 @@ export const OPERATORS = {
     AMPERSAND: { type: 'AMPERSAND', literal: '&', prefix: { precedence: 8 } },
 
     ASSIGN: { type: 'ASSIGN', literal: '=', infix: { precedence: 1, assoc: 'right' } },
+    MINUS_ASSIGN: { type: 'DEC', literal: '-=', infix: { precedence: 1, assoc: 'right' } },
+    ADD_ASSIGN: { type: 'DEC', literal: '+=', infix: { precedence: 1, assoc: 'right' } },
+
     ARROW: { type: 'ARROW', literal: '->', postfix: { precedence: 9 } },
     DOT: { type: 'DOT', literal: '.', postfix: { precedence: 9 } },
     NAMESPACE_ACCESS: { type: 'NAMESPACE_ACCESS', literal: '::', postfix: { precedence: 9 } },

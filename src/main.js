@@ -7,6 +7,11 @@ function main() {
     const input = `
     int n;
     cin >> n;
+    
+    n += 1;
+    n -= 1;
+    object.n += 1;
+    object.n -= 1;
 
     const vector<const NetworkStorage*> devices(1, 2);
 

@@ -259,6 +259,26 @@ export class PrattParser {
         const nextPrecedence = infixInfo.assoc === 'right' ? infixInfo.precedence - 1 : infixInfo.precedence;
         const right = this.parseExpression(nextPrecedence);
 
+        // left += right
+        if (token.text === OPERATORS.ADD_ASSIGN.literal) {
+            return {
+                nodeType: 'EXPRESSION',
+                type: 'ADD_ASSIGN_EXPRESSION',
+                left: left,
+                right: right,
+            };
+        }
+
+        // left -= right
+        if (token.text === OPERATORS.MINUS_ASSIGN.literal) {
+            return {
+                nodeType: 'EXPRESSION',
+                type: 'MINUS_ASSIGN_EXPRESSION',
+                left: left,
+                right: right,
+            };
+        }
+
         // left = right
         if (token.text === OPERATORS.ASSIGN.literal) {
             return {

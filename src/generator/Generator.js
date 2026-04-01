@@ -287,6 +287,16 @@ export default class Generator {
                     return `присваивание полю ${expression.left.name} объекта ${this.generateExpression(expression.left.owner)} значения ${this.generateExpression(expression.right)}`;
                 return `присваивание переменной ${this.generateExpression(expression.left)} значения ${this.generateExpression(expression.right)}`;
 
+            case 'ADD_ASSIGN_EXPRESSION':
+                if (expression.left.type === 'MEMBER_EXPRESSION')
+                    return `Увеличение поля ${expression.left.name} объекта ${this.generateExpression(expression.left.owner)} на ${this.generateExpression(expression.right)}`;
+                return `Увеличение переменной ${this.generateExpression(expression.left)} на ${this.generateExpression(expression.right)}`;
+
+            case 'MINUS_ASSIGN_EXPRESSION':
+                if (expression.left.type === 'MEMBER_EXPRESSION')
+                    return `Уменьшение поля ${expression.left.name} объекта ${this.generateExpression(expression.left.owner)} на ${this.generateExpression(expression.right)}`;
+                return `Уменьшение переменной ${this.generateExpression(expression.left)} на ${this.generateExpression(expression.right)}`;
+
             default:
                 return '[неизвестное выражение]';
         }
