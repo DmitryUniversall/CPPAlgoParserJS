@@ -263,6 +263,10 @@ export default class Generator {
             case 'CALL_EXPRESSION':
                 return this.generateCallExpression(expression);
 
+            case 'CONSTRUCTOR_CALL_EXPRESSION':
+                let args = expression.args.map((it) => this.generateExpression(it)).join(', ');
+                return `вызов конструктора${args ? ' с параметрами: ' + args : ''}`;
+
             case 'MEMBER_EXPRESSION':
                 return `${this.generateExpression(expression.owner)}.${expression.name}`;
 

@@ -260,7 +260,7 @@ export default class Parser {
         return {
             nodeType: 'EXPRESSION',
             type: 'CONSTRUCTOR_CALL_EXPRESSION',
-            className: name,
+            varName: name,
             args: args,
         };
     }
