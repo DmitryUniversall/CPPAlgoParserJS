@@ -2,7 +2,7 @@ import Keyword from '../Keyword';
 import KeywordType from '../KeywordType';
 import KeywordKind from '../KeywordKind';
 
-const keywords: Record<KeywordType, Keyword> = {
+export const keywords: Record<KeywordType, Keyword> = {
     [KeywordType.IF]: { type: KeywordType.IF, kind: KeywordKind.CONTROL, literal: 'if' },
     [KeywordType.ELSE]: { type: KeywordType.ELSE, kind: KeywordKind.CONTROL, literal: 'else' },
     [KeywordType.FOR]: { type: KeywordType.FOR, kind: KeywordKind.CONTROL, literal: 'for' },

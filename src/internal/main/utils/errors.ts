@@ -1,12 +1,10 @@
-import Token from '../entities/token/Token';
+import Token from '../../core/entities/token/Token';
+import TokenType from '../../core/entities/token/TokenType';
 
-export function createUnexpectedTokenErrorMessage(input: string, token: Token, expected?: Token): string {
-    const renderedText = token.text === '' ? '<empty>' : JSON.stringify(token.text);
-    const tokenTypeName = String(token.tokenType);
-
+export function createUnexpectedTokenErrorMessage(input: string, token: Token, expected?: { type: TokenType; text?: string }): string {
     const locationMessage = expected
-        ? `Unexpected token ${renderedText} (${tokenTypeName}). Expected: ${expected}. At line ${token.line}, column ${token.inlinePosition}, global position ${token.globalPosition}.`
-        : `Unexpected token ${renderedText} (${tokenTypeName}) at line ${token.line}, column ${token.inlinePosition}, global position ${token.globalPosition}.`;
+        ? `Unexpected token ${token.text === '' ? '<empty>' : JSON.stringify(token.text)} (${String(token.tokenType)}). Expected: ${expected.type}${expected.text ? ` (${expected.text})` : ''}. At line ${token.line}, column ${token.inlinePosition}, global position ${token.globalPosition}.`
+        : `Unexpected token ${token.text === '' ? '<empty>' : JSON.stringify(token.text)} (${String(token.tokenType)}) at line ${token.line}, column ${token.inlinePosition}, global position ${token.globalPosition}.`;
 
     const sourcePreview = createSourcePreview(input, token.line, token.inlinePosition, Math.max(token.text.length, 1));
 
@@ -14,11 +12,9 @@ export function createUnexpectedTokenErrorMessage(input: string, token: Token, e
 }
 
 export function createUnexpectedCharErrorMessage(input: string, char: string, globalPosition: number, line: number, inlinePosition: number, expected?: string): string {
-    const renderedText = char === '' ? '<empty>' : JSON.stringify(char);
-
     const locationMessage = expected
-        ? `Unexpected character ${renderedText}. Expected: ${expected}. At line ${line}, column ${inlinePosition}, global position ${globalPosition}.`
-        : `Unexpected character ${renderedText} at line ${line}, column ${inlinePosition}, global position ${globalPosition}.`;
+        ? `Unexpected character ${char === '' ? '<empty>' : JSON.stringify(char)}. Expected: ${expected}. At line ${line}, column ${inlinePosition}, global position ${globalPosition}.`
+        : `Unexpected character ${char === '' ? '<empty>' : JSON.stringify(char)} at line ${line}, column ${inlinePosition}, global position ${globalPosition}.`;
 
     const sourcePreview = createSourcePreview(input, line, inlinePosition, 1);
 

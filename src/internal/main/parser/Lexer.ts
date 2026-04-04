@@ -1,8 +1,8 @@
-import { operatorLiteralsMap } from '../entities/operator/operators/operators';
-import TokenType from '../entities/token/TokenType';
-import Token from '../entities/token/Token';
+import { operatorLiteralsMap } from '../../core/entities/operator/operators/operators';
+import TokenType from '../../core/entities/token/TokenType';
+import Token from '../../core/entities/token/Token';
 import { createUnexpectedCharErrorMessage } from '../utils/errors';
-import { keywordLiteralsMap } from '../entities/keyword/keywords/keywords';
+import { keywordLiteralsMap } from '../../core/entities/keyword/keywords/keywords';
 
 const operatorLiterals = Object.keys(operatorLiteralsMap).sort((a, b) => b.length - a.length);
 const singleTokenTypes = [TokenType.L_PAREN, TokenType.R_PAREN, TokenType.L_BRACE, TokenType.R_BRACE, TokenType.COLON, TokenType.SEMI, TokenType.COMMA, TokenType.L_BRACKET, TokenType.R_BRACKET];
@@ -29,8 +29,12 @@ export default class Lexer {
         this.position = new LexerPositionState();
     }
 
+    private hasNext(): boolean {
+        return this.position.globalPosition < this.source.length;
+    }
+
     private peek(): string | null {
-        return this.position.globalPosition < this.source.length ? this.source[this.position.globalPosition] : null;
+        return this.hasNext() ? this.source[this.position.globalPosition] : null;
     }
 
     private next(): string | null {
@@ -45,7 +49,8 @@ export default class Lexer {
 
     private expect(char: string): string {
         const nextChar = this.next();
-        if (nextChar !== char) throw new Error(createUnexpectedCharErrorMessage(this.source, nextChar ?? '<EOF>', this.position.globalPosition, this.position.line + 1, this.position.inlinePosition, char));
+        if (nextChar !== char)
+            throw new Error(createUnexpectedCharErrorMessage(this.source, nextChar ?? '<EOF>', this.position.globalPosition, this.position.line + 1, this.position.inlinePosition, char));
         return nextChar;
     }
 
@@ -187,7 +192,7 @@ export default class Lexer {
     public tokenize(): Token[] {
         const tokens: Token[] = [];
 
-        while (this.position.globalPosition < this.source.length) {
+        while (this.hasNext()) {
             this.skipWhitespaces();
 
             let char: string | null = this.peek();

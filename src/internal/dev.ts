@@ -1,4 +1,4 @@
-import Lexer from './parser/Lexer';
+import Lexer from './main/parser/Lexer';
 
 function main() {
     // noinspection CheckDtdRefs
