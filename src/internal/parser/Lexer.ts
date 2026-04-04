@@ -20,17 +20,17 @@ class LexerPositionState {
 }
 
 export default class Lexer {
-    private readonly input: string;
+    private readonly source: string;
 
     private readonly position: LexerPositionState;
 
     public constructor(input: string) {
-        this.input = input;
+        this.source = input;
         this.position = new LexerPositionState();
     }
 
     private peek(): string | null {
-        return this.position.globalPosition < this.input.length ? this.input[this.position.globalPosition] : null;
+        return this.position.globalPosition < this.source.length ? this.source[this.position.globalPosition] : null;
     }
 
     private next(): string | null {
@@ -45,7 +45,7 @@ export default class Lexer {
 
     private expect(char: string): string {
         const nextChar = this.next();
-        if (nextChar !== char) throw new Error(createUnexpectedCharErrorMessage(nextChar ?? '<EOF>', this.position.globalPosition, this.position.line + 1, this.position.inlinePosition, char));
+        if (nextChar !== char) throw new Error(createUnexpectedCharErrorMessage(this.source, nextChar ?? '<EOF>', this.position.globalPosition, this.position.line + 1, this.position.inlinePosition, char));
         return nextChar;
     }
 
@@ -87,7 +87,7 @@ export default class Lexer {
 
     private searchForSingleToken(): Token | null {
         for (const tokenType of singleTokenTypes) {
-            if (this.input.startsWith(tokenType, this.position.globalPosition)) {
+            if (this.source.startsWith(tokenType, this.position.globalPosition)) {
                 return {
                     globalPosition: this.position.globalPosition,
                     line: this.position.line,
@@ -103,7 +103,7 @@ export default class Lexer {
 
     private searchForOperator(): Token | null {
         for (const operatorLiteral of operatorLiterals) {
-            if (this.input.startsWith(operatorLiteral, this.position.globalPosition)) {
+            if (this.source.startsWith(operatorLiteral, this.position.globalPosition)) {
                 return {
                     globalPosition: this.position.globalPosition,
                     line: this.position.line,
@@ -155,7 +155,7 @@ export default class Lexer {
 
         while (this.isDigitOrLetter(this.peek())) this.next();
 
-        const identifier: string = this.input.slice(startGlobalPosition, this.position.globalPosition);
+        const identifier: string = this.source.slice(startGlobalPosition, this.position.globalPosition);
 
         return {
             globalPosition: startGlobalPosition + 1,
@@ -173,7 +173,7 @@ export default class Lexer {
 
         while (this.isDigit(this.peek())) this.next();
 
-        const number: string = this.input.slice(startGlobalPosition, this.position.globalPosition);
+        const number: string = this.source.slice(startGlobalPosition, this.position.globalPosition);
 
         return {
             globalPosition: startGlobalPosition + 1,
@@ -187,7 +187,7 @@ export default class Lexer {
     public tokenize(): Token[] {
         const tokens: Token[] = [];
 
-        while (this.position.globalPosition < this.input.length) {
+        while (this.position.globalPosition < this.source.length) {
             this.skipWhitespaces();
 
             let char: string | null = this.peek();
@@ -222,7 +222,7 @@ export default class Lexer {
                 continue;
             }
 
-            throw new Error(createUnexpectedCharErrorMessage(char ?? '<EOF>', this.position.globalPosition, this.position.line + 1, this.position.inlinePosition));
+            throw new Error(createUnexpectedCharErrorMessage(this.source, char ?? '<EOF>', this.position.globalPosition, this.position.line + 1, this.position.inlinePosition));
         }
 
         tokens.push({
