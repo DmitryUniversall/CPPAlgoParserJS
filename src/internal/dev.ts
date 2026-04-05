@@ -1,8 +1,15 @@
 import Lexer from './main/parser/Lexer';
+import Token from './core/entities/token/Token';
+import Parser from './main/parser/Parser';
+import Statement from './core/entities/ast/statements/Statement';
 
 function main() {
     // noinspection CheckDtdRefs
     const input = `
+        do {
+            cout << "Test" << endl;
+        } while (i < 10);
+            
         cout << "Initial state" << endl;
         int n;
         cin >> n;
@@ -124,7 +131,11 @@ function main() {
     `;
 
     const lexer = new Lexer(input);
-    console.log(lexer.tokenize());
+    const tokens: Token[] = lexer.tokenize();
+
+    const parser = new Parser(input, tokens, 0);
+    const statements: Statement[] = parser.parseAlgorithm();
+    console.log(statements);
 }
 
 main();

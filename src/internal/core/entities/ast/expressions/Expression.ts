@@ -19,6 +19,7 @@ import ScopeResolutionExpression from './expressions/postfix/ScopeResolutionExpr
 import TernaryExpression from './expressions/other/TernaryExpression';
 import CallExpression from './expressions/other/CallExpression';
 import IndexExpression from './expressions/other/IndexExpression';
+import ConstructorCallExpression from './expressions/other/ConstructorCallExpression';
 
 type Expression =
     | DerefExpression
@@ -41,6 +42,7 @@ type Expression =
     | ScopeResolutionExpression
     | TernaryExpression
     | CallExpression
-    | IndexExpression;
+    | IndexExpression
+    | ConstructorCallExpression;
 
 export default Expression;

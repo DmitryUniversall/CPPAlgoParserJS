@@ -22,12 +22,12 @@ export default class TypeParser extends TokenParser {
         return prefixTypeModifierLiteralsMap[token.text] !== undefined;
     }
 
-    public parseType(): TypeExpression {
+    public parseTypeExpression(): TypeExpression {
         // const ... A
         const prefixModifiers: PrefixTypeModifier[] = [];
         while (this.isPrefixTypeModifier(this.peek())) prefixModifiers.push(prefixTypeModifierLiteralsMap[this.nextOrThrow().text]); // TODO: Search 2 times; Refactor
 
-        let typeToken = this.expect(TokenType.IDENT);
+        let typeToken = this.expect(TokenType.IDENTIFIER);
 
         // A<...>
         const typeParameters = [];
@@ -35,7 +35,7 @@ export default class TypeParser extends TokenParser {
             this.expect(TokenType.OPERATOR, operators[OperatorType.LT].literal); // Skip '<'
 
             while (true) {
-                typeParameters.push(this.parseType());
+                typeParameters.push(this.parseTypeExpression());
                 if (this.peek()?.text === operators[OperatorType.GT].literal) break;
                 this.expect(TokenType.COMMA);
             }

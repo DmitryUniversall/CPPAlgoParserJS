@@ -7,6 +7,7 @@ export const keywords: Record<KeywordType, Keyword> = {
     [KeywordType.ELSE]: { type: KeywordType.ELSE, kind: KeywordKind.CONTROL, literal: 'else' },
     [KeywordType.FOR]: { type: KeywordType.FOR, kind: KeywordKind.CONTROL, literal: 'for' },
     [KeywordType.WHILE]: { type: KeywordType.WHILE, kind: KeywordKind.CONTROL, literal: 'while' },
+    [KeywordType.DO]: { type: KeywordType.DO, kind: KeywordKind.CONTROL, literal: 'do' },
 
     [KeywordType.DELETE]: { type: KeywordType.DELETE, kind: KeywordKind.ACTION, literal: 'delete' },
     [KeywordType.NEW]: { type: KeywordType.NEW, kind: KeywordKind.ACTION, literal: 'new' },

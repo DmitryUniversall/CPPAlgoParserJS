@@ -1,7 +1,7 @@
 enum ASTNodeType {
-    STATEMENT = 'statement',
-    EXPRESSION = 'expression',
-    TYPE = 'type',
+    STATEMENT = 'STATEMENT',
+    EXPRESSION = 'EXPRESSION',
+    TYPE = 'TYPE',
 }
 
 export default ASTNodeType;

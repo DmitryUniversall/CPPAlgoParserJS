@@ -13,6 +13,10 @@ export default class TokenParser {
         this.position = startPosition;
     }
 
+    public get currentPosition(): number {
+        return this.position;
+    }
+
     protected hasNext(): boolean {
         return this.position < this.tokens.length;
     }

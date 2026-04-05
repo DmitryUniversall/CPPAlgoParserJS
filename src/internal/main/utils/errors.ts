@@ -26,7 +26,7 @@ function createSourcePreview(input: string, line: number, inlinePosition: number
 
     const sourceLine = lines[line] ?? '';
 
-    const safeColumn = Math.max(inlinePosition, 0);
+    const safeColumn = Math.max(inlinePosition + 1, 0);  // +1?
     const safeMarkerLength = Math.max(markerLength, 1);
 
     let markerLine: string;

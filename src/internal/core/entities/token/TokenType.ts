@@ -1,5 +1,5 @@
 enum TokenType {
-    IDENT = 'IDENT',
+    IDENTIFIER = 'IDENTIFIER',
     NUMBER = 'NUMBER',
     STRING_LITERAL = 'STRING_LITERAL',
 

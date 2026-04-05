@@ -167,7 +167,7 @@ export default class Lexer {
             line: startLine,
             inlinePosition: startInlinePosition + 1,
             text: identifier,
-            tokenType: keywordLiteralsMap[identifier] !== undefined ? TokenType.KEYWORD : TokenType.IDENT,
+            tokenType: keywordLiteralsMap[identifier] !== undefined ? TokenType.KEYWORD : TokenType.IDENTIFIER,
         };
     }
 

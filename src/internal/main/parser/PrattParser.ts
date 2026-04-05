@@ -14,6 +14,7 @@ import TypeExpression from '../../core/entities/ast/type/TypeExpression';
 import TernaryExpression from '../../core/entities/ast/expressions/expressions/other/TernaryExpression';
 import CallExpression from '../../core/entities/ast/expressions/expressions/other/CallExpression';
 import IndexExpression from '../../core/entities/ast/expressions/expressions/other/IndexExpression';
+import ConstructorCallExpression from '../../core/entities/ast/expressions/expressions/other/ConstructorCallExpression';
 
 const prefixOperators: Record<string, Operator> = Object.entries(operators).reduce((acc: Record<string, Operator>, [_, config]) => {
     if (config.prefix) acc[config.literal] = config;
@@ -30,7 +31,7 @@ const postfixOperators: Record<string, Operator> = Object.entries(operators).red
     return acc;
 }, {});
 
-const keywordExpressionsMap: Record<string, Keyword> = [keywords.nullptr].reduce((acc: Record<string, Keyword>, keyword) => {
+const keywordExpressionsMap: Record<string, Keyword> = [keywords.NULLPTR].reduce((acc: Record<string, Keyword>, keyword) => {
     acc[keyword.literal] = keyword;
     return acc;
 }, {});
@@ -47,8 +48,10 @@ export default class PrattParser extends TokenParser {
     }
 
     private parseTypeExpression(): TypeExpression {
-        const typeParser = new TypeParser(this.source, this.tokens, this.position);
-        return typeParser.parseType();
+        const parser = new TypeParser(this.source, this.tokens, this.position);
+        const result: TypeExpression = parser.parseTypeExpression();
+        this.position = parser.currentPosition;
+        return result;
     }
 
     private parsePrefixExpression(token: Token): Expression {
@@ -98,8 +101,8 @@ export default class PrattParser extends TokenParser {
         }
 
         // new Obj<...>
-        if (token.tokenType === TokenType.KEYWORD && token.text === keywords.new.literal) {
-            const typeExpression = this.parseTypeExpression();
+        if (token.tokenType === TokenType.KEYWORD && token.text === keywords.NEW.literal) {
+            const typeExpression: TypeExpression = this.parseTypeExpression();
 
             return {
                 nodeType: ASTNodeType.EXPRESSION,
@@ -119,7 +122,7 @@ export default class PrattParser extends TokenParser {
         }
 
         // Identifier (obj)
-        if (token.tokenType === TokenType.IDENT) {
+        if (token.tokenType === TokenType.IDENTIFIER) {
             return {
                 nodeType: ASTNodeType.EXPRESSION,
                 type: ExpressionType.IDENT_EXPRESSION,
@@ -155,7 +158,7 @@ export default class PrattParser extends TokenParser {
         throw new Error(createUnexpectedTokenErrorMessage(this.source, token));
     }
 
-    parseInfixExpression(left: Expression, token: Token, operator: Operator): Expression {
+    private parseInfixExpression(left: Expression, token: Token, operator: Operator): Expression {
         const nextPrecedence = operator.infix!!.assoc === 'right' ? operator.infix!!.precedence - 1 : operator.infix!!.precedence;
         const right = this.parseExpression(nextPrecedence);
 
@@ -199,7 +202,7 @@ export default class PrattParser extends TokenParser {
         };
     }
 
-    parsePostfixExpression(left: Expression, token: Token): Expression {
+    private parsePostfixExpression(left: Expression, token: Token): Expression {
         // left++
         if (token.text === operators.inc.literal) {
             return {
@@ -220,7 +223,7 @@ export default class PrattParser extends TokenParser {
 
         // left.X
         if (token.text === operators.dot.literal) {
-            const memberName = this.expect(TokenType.IDENT);
+            const memberName = this.expect(TokenType.IDENTIFIER);
 
             return {
                 nodeType: ASTNodeType.EXPRESSION,
@@ -232,7 +235,7 @@ export default class PrattParser extends TokenParser {
 
         // left->X
         if (token.text === operators.arrow.literal) {
-            const memberName = this.expect(TokenType.IDENT);
+            const memberName = this.expect(TokenType.IDENTIFIER);
 
             return {
                 nodeType: ASTNodeType.EXPRESSION,
@@ -243,7 +246,7 @@ export default class PrattParser extends TokenParser {
         }
 
         if (token.text === operators.namespaceAccess.literal) {
-            const name = this.expect(TokenType.IDENT);
+            const name = this.expect(TokenType.IDENTIFIER);
 
             return {
                 nodeType: ASTNodeType.EXPRESSION,
@@ -271,7 +274,7 @@ export default class PrattParser extends TokenParser {
     }
 
     private parseCallExpression(left: Expression): CallExpression {
-        const args = [];
+        const args: Expression[] = [];
 
         if (this.peek()?.tokenType !== TokenType.R_PAREN) {
             while (true) {
@@ -304,7 +307,31 @@ export default class PrattParser extends TokenParser {
         };
     }
 
-    parseExpression(minPrecedence = 0): Expression {
+    public parseConstructorCall(varName: string): ConstructorCallExpression {
+        this.expect(TokenType.L_PAREN);
+
+        const args = [];
+
+        if (this.peek()?.tokenType !== TokenType.R_PAREN) {
+            while (true) {
+                args.push(this.parseExpression());
+
+                if (this.peek()?.tokenType !== TokenType.COMMA) break;
+                this.next();
+            }
+        }
+
+        this.expect(TokenType.R_PAREN);
+
+        return {
+            nodeType: ASTNodeType.EXPRESSION,
+            type: ExpressionType.CONSTRUCTOR_CALL_EXPRESSION,
+            varName: varName,
+            args: args,
+        };
+    }
+
+    public parseExpression(minPrecedence = 0): Expression {
         let left = this.parsePrefixExpression(this.nextOrThrow());
 
         while (true) {
