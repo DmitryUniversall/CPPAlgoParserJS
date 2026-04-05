@@ -9,7 +9,16 @@ function main() {
     const input = `
         do {
             cout << "Test" << endl;
+            if (test > 0) {
+                cout << "Test2" << endl;
+            }
         } while (i < 10);
+        
+        while (i < 10) {
+            if (test > 0) {
+                cout << "Test2" << endl;
+            }
+        }
             
         cout << "Initial state" << endl;
         int n;
@@ -28,6 +37,10 @@ function main() {
             cin >> name >> speed >> capacity;
     
             devices.push_back(new NetworkStorage(name, speed, capacity));
+            
+            if (test > 0) {
+                cout << "Test2" << endl;
+            }
         }
     
         devices.push_back(nullptr);

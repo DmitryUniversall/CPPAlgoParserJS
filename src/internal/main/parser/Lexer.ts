@@ -63,18 +63,16 @@ export default class Lexer {
     }
 
     private expect(char: string): string {
+        const globalPositionBefore: number = this.position.globalPosition;
+        const lineBefore: number = this.position.line;
+        const inlinePositionBefore: number = this.position.inlinePosition;
+
         const nextChar = this.next();
-        if (nextChar !== char)
-            throw new Error(
-                createUnexpectedCharErrorMessage(
-                    this.source,
-                    nextChar ?? '<EOF>',
-                    this.position.globalPosition,
-                    this.position.line,
-                    this.position.inlinePosition,
-                    char,
-                ),
-            );
+
+        if (nextChar !== char) {
+            throw new Error(createUnexpectedCharErrorMessage(this.source, nextChar ?? '<EOF>', globalPositionBefore, lineBefore, inlinePositionBefore, char));
+        }
+
         return nextChar;
     }
 

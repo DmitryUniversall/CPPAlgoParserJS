@@ -60,10 +60,22 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
         };
     }
 
+    private redirectFragmentExits(rows: Row[], target: number): void {
+        // TODO: ??
+        if (rows.length === 0) return;
+
+        const internalNumbers = new Set(rows.map((row) => row.number));
+
+        for (const row of rows) {
+            if (!internalNumbers.has(row.next)) row.next = target;
+            if (row.subrow && !internalNumbers.has(row.subrow.next)) row.subrow.next = target;
+        }
+    }
+
     private getInputVarNamesFromExpression(expression: Expression, found: string[]): string[] {
         if (expression.type !== ExpressionType.BINARY_OPERATION_EXPRESSION || expression.operator !== operators.shr) return found;
 
-        if (expression.right.type === ExpressionType.IDENT_EXPRESSION) found = [expression.right.identifier, ...found];
+        found = [this.generateExpressionString(expression.right), ...found];
 
         if (!expression.left) return found;
         return this.getInputVarNamesFromExpression(expression.left, found);
@@ -120,14 +132,14 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
 
     private generateCallArgs(args: Expression[]): string {
         if (args.length === 0) return '';
-        return ' с параметрами: ' + args.map((it) => this.generateExpressionString(it)).join(', ');
+        return args.map((it) => this.generateExpressionString(it)).join(', ');
     }
 
     private generateCallExpressionString(expression: CallExpression): string {
         let args: string = this.generateCallArgs(expression.args);
 
         if (expression.called.type === ExpressionType.NEW_EXPRESSION)
-            return `Выделение памяти под объект типа ${this.generateTypeExpressionString(expression.called.typeExpr)}, получение указателя и вызов конструктора${args ? ' с параметрами: ' + args : ''} `;
+            return `выделение памяти под объект типа ${this.generateTypeExpressionString(expression.called.typeExpr)}, получение указателя и вызов конструктора${args ? ' с параметрами: ' + args : ''}`;
 
         if (expression.called.type === ExpressionType.MEMBER_EXPRESSION || expression.called.type === ExpressionType.PTR_MEMBER_EXPRESSION) {
             return `вызов метода ${expression.called.field} у объекта ${this.generateExpressionString(expression.called.owner)}${args ? ' с параметрами: ' + args : ''}`;
@@ -167,7 +179,7 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
             case ExpressionType.POSTFIX_DECREMENT_EXPRESSION:
                 return 'уменьшение ' + this.generateExpressionString(expression.expr);
             case ExpressionType.DEREF_EXPRESSION:
-                return 'взятие ссылки указателя ' + this.generateExpressionString(expression.expr);
+                return 'разыменование указателя ' + this.generateExpressionString(expression.expr);
             case ExpressionType.ADDRESS_EXPRESSION:
                 return 'взятие адреса объекта ' + this.generateExpressionString(expression.expr);
             case ExpressionType.CALL_EXPRESSION:
@@ -184,15 +196,15 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
             case ExpressionType.INDEX_EXPRESSION:
                 return 'элемент объекта ' + this.generateExpressionString(expression.owner) + ' по индексу ' + this.generateExpressionString(expression.index);
             case ExpressionType.NEW_EXPRESSION:
-                return `Выделение памяти под объект типа ${this.generateTypeExpressionString(expression.typeExpr)} и получение указателя на неё`;
+                return `выделение памяти под объект типа ${this.generateTypeExpressionString(expression.typeExpr)} и получение указателя`;
             case ExpressionType.ADD_ASSIGN_EXPRESSION:
                 if (expression.left.type === ExpressionType.MEMBER_EXPRESSION)
-                    return `Увеличение поля ${expression.left.field} объекта ${this.generateExpressionString(expression.left.owner)} на ${this.generateExpressionString(expression.right)}`;
-                return `Увеличение переменной ${this.generateExpressionString(expression.left)} на ${this.generateExpressionString(expression.right)}`;
+                    return `увеличение поля ${expression.left.field} объекта ${this.generateExpressionString(expression.left.owner)} на ${this.generateExpressionString(expression.right)}`;
+                return `увеличение переменной ${this.generateExpressionString(expression.left)} на ${this.generateExpressionString(expression.right)}`;
             case ExpressionType.MINUS_ASSIGN_EXPRESSION:
                 if (expression.left.type === ExpressionType.MEMBER_EXPRESSION)
-                    return `Уменьшение поля ${expression.left.field} объекта ${this.generateExpressionString(expression.left.owner)} на ${this.generateExpressionString(expression.right)}`;
-                return `Уменьшение переменной ${this.generateExpressionString(expression.left)} на ${this.generateExpressionString(expression.right)}`;
+                    return `уменьшение поля ${expression.left.field} объекта ${this.generateExpressionString(expression.left.owner)} на ${this.generateExpressionString(expression.right)}`;
+                return `уменьшение переменной ${this.generateExpressionString(expression.left)} на ${this.generateExpressionString(expression.right)}`;
             case ExpressionType.ASSIGNMENT_EXPRESSION:
                 if (expression.left.type === ExpressionType.MEMBER_EXPRESSION)
                     return `присваивание полю ${expression.left.field} объекта ${this.generateExpressionString(expression.left.owner)} значения ${this.generateExpressionString(expression.right)}`;
@@ -207,24 +219,7 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
     }
 
     private generateDeleteStatementRow(statement: DeleteStatement): Row {
-        return this.createNewActionRow(`Удаление объекта по указателю ${this.generateExpressionString(statement.deleted)}`);
-    }
-
-    private generateDoWhileStatementRows(statement: DoWhileStatement): Row[] {
-        let body: Row[] = this.generateBlockStatementRows(statement.body);
-
-        const conditionNumber: number = ++this.rowNumber;
-        const conditionRow: Row = this.createRowWith({
-            number: conditionNumber,
-            next: body.length !== 0 ? body[0].number : this.rowNumber + 1, // If condition is true
-            condition: this.generateExpressionString(statement.condition),
-            subrow: this.createRowWith({
-                number: conditionNumber,
-                next: this.rowNumber + 1, // If condition is false (points to 1st after the cycle)
-            }),
-        });
-
-        return [...body, conditionRow];
+        return this.createNewActionRow(`удаление объекта по указателю ${this.generateExpressionString(statement.deleted)}`);
     }
 
     private generateForStatementRows(statement: ForStatement): Row[] {
@@ -241,11 +236,19 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
 
         let body: Row[] = this.generateBlockStatementRows(statement.body);
 
+        const stepNumber = ++this.rowNumber;
         const stepRow = this.createRowWith({
-            number: ++this.rowNumber,
+            number: stepNumber,
             action: this.generateExpressionString(statement.step),
             next: conditionIndex, // points to condition to create cycle
         });
+
+        if (body.length !== 0) {
+            this.redirectFragmentExits(body, stepNumber);
+            conditionRow.next = body[0].number;
+        } else {
+            conditionRow.next = stepNumber;
+        }
 
         conditionRow.subrow = this.createRowWith({
             number: conditionIndex,
@@ -255,21 +258,45 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
         return [...initRow, conditionRow, ...body, stepRow];
     }
 
+    private generateDoWhileStatementRows(statement: DoWhileStatement): Row[] {
+        let body: Row[] = this.generateBlockStatementRows(statement.body);
+
+        const conditionNumber: number = ++this.rowNumber;
+        const conditionRow: Row = this.createRowWith({
+            number: conditionNumber,
+            next: body.length !== 0 ? body[0].number : conditionNumber, // If condition is true
+            condition: this.generateExpressionString(statement.condition),
+            subrow: this.createRowWith({
+                number: conditionNumber,
+                next: this.rowNumber + 1, // If condition is false (points to 1st after the cycle)
+            }),
+        });
+
+        if (body.length !== 0) this.redirectFragmentExits(body, conditionNumber);
+
+        return [...body, conditionRow];
+    }
+
     private generateWhileStatementRows(statement: WhileStatement): Row[] {
         const condition: string = this.generateExpressionString(statement.condition);
-        const conditionIndex: number = ++this.rowNumber;
+        const conditionNumber: number = ++this.rowNumber;
         const conditionRow: Row = this.createRowWith({
-            number: conditionIndex,
-            next: this.rowNumber + 1, // If condition is true (points to 1st in body)
+            number: conditionNumber,
+            next: -1, // If condition is true (will be reassigned later)
             condition: condition,
         });
 
         let body: Row[] = this.generateBlockStatementRows(statement.body);
 
-        if (body.length !== 0) body[body.length - 1].next = conditionIndex;
+        if (body.length !== 0) {
+            this.redirectFragmentExits(body, conditionNumber);
+            conditionRow.next = body[0].number;
+        } else {
+            conditionRow.next = conditionNumber;
+        }
 
         conditionRow.subrow = this.createRowWith({
-            number: conditionIndex,
+            number: conditionNumber,
             next: this.rowNumber + 1, // If condition is false (points to 1st after the cycle)
         });
 
@@ -306,14 +333,14 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
             : 'переменной';
 
         return statement.declarations.map((declaration) => {
-            const arrayString = !!declaration.arrayLength ? `массив длинной ${this.generateExpressionString(declaration.arrayLength)}` : '';
+            const arrayString = !!declaration.arrayLength ? `массив длиной ${this.generateExpressionString(declaration.arrayLength)}` : '';
 
             if (declaration.init)
                 return this.createNewActionRow(
-                    `Инициализация ${varType} ${declaration.name}${arrayString.length !== 0 ? ` (${arrayString})` : ''} типа ${type} значением ${this.generateExpressionString(declaration.init)}`,
+                    `инициализация ${varType} ${declaration.name}${arrayString.length !== 0 ? ` (${arrayString})` : ''} типа ${type} значением ${this.generateExpressionString(declaration.init)}`,
                 );
 
-            return this.createNewActionRow(`Объявление ${varType} ${declaration.name}${arrayString.length !== 0 ? ` (${arrayString})` : ''} типа ${type}`);
+            return this.createNewActionRow(`объявление ${varType} ${declaration.name}${arrayString.length !== 0 ? ` (${arrayString})` : ''} типа ${type}`);
         });
     }
 
