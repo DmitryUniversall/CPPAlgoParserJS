@@ -79,7 +79,7 @@ export default class Parser extends TokenParser {
         const varTypeExpr: TypeExpression = this.parseTypeExpression();
 
         while (true) {
-            const name = this.expect(TokenType.IDENTIFIER).text;
+            const name = this.expectNextToken(TokenType.IDENTIFIER).text;
 
             let initExpr: Expression | null = null;
             if (this.peek()?.tokenType === TokenType.L_PAREN) {
@@ -87,24 +87,24 @@ export default class Parser extends TokenParser {
             }
 
             if (this.peek()?.text === operators.assign.literal) {
-                this.expect(TokenType.OPERATOR);
+                this.expectNextToken(TokenType.OPERATOR);
                 initExpr = this.parseExpression();
             }
 
             let arrayLengthExpr: Expression | null = null;
             if (this.peek()?.tokenType === TokenType.L_BRACKET) {
-                this.expect(TokenType.L_BRACKET);
+                this.expectNextToken(TokenType.L_BRACKET);
                 arrayLengthExpr = this.parseExpression();
-                this.expect(TokenType.R_BRACKET);
+                this.expectNextToken(TokenType.R_BRACKET);
             }
 
             declarations.push({ name: name, init: initExpr, arrayLength: arrayLengthExpr });
 
             if (this.peek()?.tokenType !== TokenType.COMMA) break;
-            this.expect(TokenType.COMMA);
+            this.expectNextToken(TokenType.COMMA);
         }
 
-        if (expectSemicolon) this.expect(TokenType.SEMI);
+        if (expectSemicolon) this.expectNextToken(TokenType.SEMI);
 
         return {
             nodeType: ASTNodeType.STATEMENT,
@@ -115,11 +115,11 @@ export default class Parser extends TokenParser {
     }
 
     private parseBlockStatement(): BlockStatement {
-        this.expect(TokenType.L_BRACE);
+        this.expectNextToken(TokenType.L_BRACE);
 
         const body = [];
         while (this.peek()?.tokenType !== TokenType.R_BRACE) body.push(this.parseStatement());
-        this.expect(TokenType.R_BRACE);
+        this.expectNextToken(TokenType.R_BRACE);
 
         return {
             nodeType: ASTNodeType.STATEMENT,
@@ -129,11 +129,11 @@ export default class Parser extends TokenParser {
     }
 
     private parseDeleteStatement(): DeleteStatement {
-        this.expect(TokenType.KEYWORD, keywords.DELETE.literal);
+        this.expectNextToken(TokenType.KEYWORD, keywords.DELETE.literal);
 
         const deleted = this.parseExpression();
 
-        this.expect(TokenType.SEMI);
+        this.expectNextToken(TokenType.SEMI);
 
         return {
             nodeType: ASTNodeType.STATEMENT,
@@ -143,18 +143,18 @@ export default class Parser extends TokenParser {
     }
 
     private parseIfStatement(): IfStatement {
-        this.expect(TokenType.KEYWORD, keywords.IF.literal);
+        this.expectNextToken(TokenType.KEYWORD, keywords.IF.literal);
 
-        this.expect(TokenType.L_PAREN);
+        this.expectNextToken(TokenType.L_PAREN);
         const condition: Expression = this.parseExpression();
-        this.expect(TokenType.R_PAREN);
+        this.expectNextToken(TokenType.R_PAREN);
 
         const thenStmt: BlockStatement = this.parseBlockStatement();
 
         let elseStmt: BlockStatement | null = null;
         const nextToken = this.peek();
         if (nextToken?.tokenType === TokenType.KEYWORD && nextToken.text === keywords.ELSE.literal) {
-            this.expect(TokenType.KEYWORD);
+            this.expectNextToken(TokenType.KEYWORD);
             elseStmt = this.parseBlockStatement();
         }
 
@@ -168,11 +168,11 @@ export default class Parser extends TokenParser {
     }
 
     private parseWhileStatement(): WhileStatement {
-        this.expect(TokenType.KEYWORD, keywords.WHILE.literal);
+        this.expectNextToken(TokenType.KEYWORD, keywords.WHILE.literal);
 
-        this.expect(TokenType.L_PAREN);
+        this.expectNextToken(TokenType.L_PAREN);
         const condition: Expression = this.parseExpression();
-        this.expect(TokenType.R_PAREN);
+        this.expectNextToken(TokenType.R_PAREN);
 
         const body: BlockStatement = this.parseBlockStatement();
 
@@ -185,17 +185,17 @@ export default class Parser extends TokenParser {
     }
 
     private parseDoWhileStatement(): DoWhileStatement {
-        this.expect(TokenType.KEYWORD, keywords.DO.literal);
+        this.expectNextToken(TokenType.KEYWORD, keywords.DO.literal);
 
         const body: BlockStatement = this.parseBlockStatement();
 
-        this.expect(TokenType.KEYWORD, keywords.WHILE.literal);
+        this.expectNextToken(TokenType.KEYWORD, keywords.WHILE.literal);
 
-        this.expect(TokenType.L_PAREN);
+        this.expectNextToken(TokenType.L_PAREN);
         const condition: Expression = this.parseExpression();
-        this.expect(TokenType.R_PAREN);
+        this.expectNextToken(TokenType.R_PAREN);
 
-        this.expect(TokenType.SEMI)
+        this.expectNextToken(TokenType.SEMI)
 
         return {
             nodeType: ASTNodeType.STATEMENT,
@@ -206,31 +206,18 @@ export default class Parser extends TokenParser {
     }
 
     private parseForStatement(): ForStatement {
-        this.expect(TokenType.KEYWORD, keywords.FOR.literal);
+        this.expectNextToken(TokenType.KEYWORD, keywords.FOR.literal);
 
-        this.expect(TokenType.L_PAREN);
-        if (this.peek()?.tokenType === TokenType.SEMI) {
-            this.expect(TokenType.SEMI);
-            this.expect(TokenType.R_PAREN);
-
-            return {
-                nodeType: ASTNodeType.STATEMENT,
-                type: StatementType.FOR_STATEMENT,
-                init: null,
-                condition: null,
-                step: null,
-                body: null,
-            };
-        }
+        this.expectNextToken(TokenType.L_PAREN);
 
         const init: Expression | DeclarationStatement = this.isDeclarationStart() ? this.parseDeclarationStatement(false) : this.parseExpression();
-        this.expect(TokenType.SEMI);
+        this.expectNextToken(TokenType.SEMI);
 
         const condition: Expression = this.parseExpression();
-        this.expect(TokenType.SEMI);
+        this.expectNextToken(TokenType.SEMI);
 
         const step: Expression = this.parseExpression();
-        this.expect(TokenType.R_PAREN);
+        this.expectNextToken(TokenType.R_PAREN);
 
         const body: BlockStatement = this.parseBlockStatement();
 
@@ -247,7 +234,7 @@ export default class Parser extends TokenParser {
     private parseExpressionStatement(): ExpressionStatement {
         const expr = this.parseExpression();
 
-        this.expect(TokenType.SEMI);
+        this.expectNextToken(TokenType.SEMI);
 
         return {
             nodeType: ASTNodeType.STATEMENT,

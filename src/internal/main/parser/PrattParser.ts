@@ -95,7 +95,7 @@ export default class PrattParser extends TokenParser {
         if (token.text === operators.dec.literal) {
             return {
                 nodeType: ASTNodeType.EXPRESSION,
-                type: ExpressionType.PREFIX_INCREMENT_EXPRESSION,
+                type: ExpressionType.PREFIX_DECREMENT_EXPRESSION,
                 expr: this.parseExpression(prefixOperators[token.text].prefix!!.precedence),
             };
         }
@@ -151,7 +151,7 @@ export default class PrattParser extends TokenParser {
         // (...)
         if (token.tokenType === TokenType.L_PAREN) {
             const expression = this.parseExpression();
-            this.expect(TokenType.R_PAREN);
+            this.expectNextToken(TokenType.R_PAREN);
             return expression;
         }
 
@@ -223,7 +223,7 @@ export default class PrattParser extends TokenParser {
 
         // left.X
         if (token.text === operators.dot.literal) {
-            const memberName = this.expect(TokenType.IDENTIFIER);
+            const memberName = this.expectNextToken(TokenType.IDENTIFIER);
 
             return {
                 nodeType: ASTNodeType.EXPRESSION,
@@ -235,7 +235,7 @@ export default class PrattParser extends TokenParser {
 
         // left->X
         if (token.text === operators.arrow.literal) {
-            const memberName = this.expect(TokenType.IDENTIFIER);
+            const memberName = this.expectNextToken(TokenType.IDENTIFIER);
 
             return {
                 nodeType: ASTNodeType.EXPRESSION,
@@ -246,7 +246,7 @@ export default class PrattParser extends TokenParser {
         }
 
         if (token.text === operators.namespaceAccess.literal) {
-            const name = this.expect(TokenType.IDENTIFIER);
+            const name = this.expectNextToken(TokenType.IDENTIFIER);
 
             return {
                 nodeType: ASTNodeType.EXPRESSION,
@@ -261,7 +261,7 @@ export default class PrattParser extends TokenParser {
 
     private parseTernaryExpression(left: Expression): TernaryExpression {
         const thenExpression = this.parseExpression(operators.tern.infix!!.precedence - 1);
-        this.expect(TokenType.COLON);
+        this.expectNextToken(TokenType.COLON);
         const elseExpression = this.parseExpression(operators.tern.infix!!.precedence - 1);
 
         return {
@@ -285,7 +285,7 @@ export default class PrattParser extends TokenParser {
             }
         }
 
-        this.expect(TokenType.R_PAREN);
+        this.expectNextToken(TokenType.R_PAREN);
         return {
             nodeType: ASTNodeType.EXPRESSION,
             type: ExpressionType.CALL_EXPRESSION,
@@ -297,7 +297,7 @@ export default class PrattParser extends TokenParser {
     private parseIndex(left: Expression): IndexExpression {
         const expression = this.parseExpression();
 
-        this.expect(TokenType.R_BRACKET);
+        this.expectNextToken(TokenType.R_BRACKET);
 
         return {
             nodeType: ASTNodeType.EXPRESSION,
@@ -308,7 +308,7 @@ export default class PrattParser extends TokenParser {
     }
 
     public parseConstructorCall(varName: string): ConstructorCallExpression {
-        this.expect(TokenType.L_PAREN);
+        this.expectNextToken(TokenType.L_PAREN);
 
         const args = [];
 
@@ -321,7 +321,7 @@ export default class PrattParser extends TokenParser {
             }
         }
 
-        this.expect(TokenType.R_PAREN);
+        this.expectNextToken(TokenType.R_PAREN);
 
         return {
             nodeType: ASTNodeType.EXPRESSION,

@@ -27,20 +27,20 @@ export default class TypeParser extends TokenParser {
         const prefixModifiers: PrefixTypeModifier[] = [];
         while (this.isPrefixTypeModifier(this.peek())) prefixModifiers.push(prefixTypeModifierLiteralsMap[this.nextOrThrow().text]); // TODO: Search 2 times; Refactor
 
-        let typeToken = this.expect(TokenType.IDENTIFIER);
+        let typeToken = this.expectNextToken(TokenType.IDENTIFIER);
 
         // A<...>
         const typeParameters = [];
         if (this.peek()?.text === operators[OperatorType.LT].literal) {
-            this.expect(TokenType.OPERATOR, operators[OperatorType.LT].literal); // Skip '<'
+            this.expectNextToken(TokenType.OPERATOR, operators[OperatorType.LT].literal); // Skip '<'
 
             while (true) {
                 typeParameters.push(this.parseTypeExpression());
                 if (this.peek()?.text === operators[OperatorType.GT].literal) break;
-                this.expect(TokenType.COMMA);
+                this.expectNextToken(TokenType.COMMA);
             }
 
-            this.expect(TokenType.OPERATOR, operators[OperatorType.GT].literal); // Skip '>'
+            this.expectNextToken(TokenType.OPERATOR, operators[OperatorType.GT].literal); // Skip '>'
         }
 
         // A*

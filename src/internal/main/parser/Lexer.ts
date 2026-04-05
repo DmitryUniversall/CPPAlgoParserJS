@@ -41,16 +41,40 @@ export default class Lexer {
         const nextChar: string | null = this.peek();
         if (nextChar === null) return null;
 
-        this.position.globalPosition++;
-        this.position.inlinePosition++;
+        this.advance();
 
         return nextChar;
+    }
+
+    private advance(count = 1): void {
+        for (let i: number = 0; i < count; i++) {
+            const char: string = this.source[this.position.globalPosition];
+            if (char == null) return;
+
+            this.position.globalPosition++;
+
+            if (char === '\n') {
+                this.position.line++;
+                this.position.inlinePosition = 0;
+            } else {
+                this.position.inlinePosition++;
+            }
+        }
     }
 
     private expect(char: string): string {
         const nextChar = this.next();
         if (nextChar !== char)
-            throw new Error(createUnexpectedCharErrorMessage(this.source, nextChar ?? '<EOF>', this.position.globalPosition, this.position.line + 1, this.position.inlinePosition, char));
+            throw new Error(
+                createUnexpectedCharErrorMessage(
+                    this.source,
+                    nextChar ?? '<EOF>',
+                    this.position.globalPosition,
+                    this.position.line,
+                    this.position.inlinePosition,
+                    char,
+                ),
+            );
         return nextChar;
     }
 
@@ -80,14 +104,7 @@ export default class Lexer {
     }
 
     private skipWhitespaces() {
-        while (this.isWhitespace(this.peek())) {
-            const char: string | null = this.next();
-
-            if (char === '\n') {
-                this.position.line++;
-                this.position.inlinePosition = 0;
-            }
-        }
+        while (this.isWhitespace(this.peek())) this.next();
     }
 
     private searchForSingleToken(): Token | null {
@@ -145,9 +162,9 @@ export default class Lexer {
         }
 
         return {
-            globalPosition: startGlobalPosition + 1,
+            globalPosition: startGlobalPosition,
             line: startLine,
-            inlinePosition: startInlinePosition + 1,
+            inlinePosition: startInlinePosition,
             text: result,
             tokenType: TokenType.STRING_LITERAL,
         };
@@ -163,9 +180,9 @@ export default class Lexer {
         const identifier: string = this.source.slice(startGlobalPosition, this.position.globalPosition);
 
         return {
-            globalPosition: startGlobalPosition + 1,
+            globalPosition: startGlobalPosition,
             line: startLine,
-            inlinePosition: startInlinePosition + 1,
+            inlinePosition: startInlinePosition,
             text: identifier,
             tokenType: keywordLiteralsMap[identifier] !== undefined ? TokenType.KEYWORD : TokenType.IDENTIFIER,
         };
@@ -181,9 +198,9 @@ export default class Lexer {
         const number: string = this.source.slice(startGlobalPosition, this.position.globalPosition);
 
         return {
-            globalPosition: startGlobalPosition + 1,
+            globalPosition: startGlobalPosition,
             line: startLine,
-            inlinePosition: startInlinePosition + 1,
+            inlinePosition: startInlinePosition,
             text: number,
             tokenType: TokenType.NUMBER,
         };
@@ -215,19 +232,21 @@ export default class Lexer {
 
             const operatorToken: Token | null = this.searchForOperator();
             if (operatorToken) {
-                this.position.globalPosition += operatorToken.text.length;
+                this.advance(operatorToken.text.length);
                 tokens.push(operatorToken);
                 continue;
             }
 
             const singleToken: Token | null = this.searchForSingleToken();
             if (singleToken) {
-                this.position.globalPosition += singleToken.text.length;
+                this.advance(singleToken.text.length);
                 tokens.push(singleToken);
                 continue;
             }
 
-            throw new Error(createUnexpectedCharErrorMessage(this.source, char ?? '<EOF>', this.position.globalPosition, this.position.line + 1, this.position.inlinePosition));
+            throw new Error(
+                createUnexpectedCharErrorMessage(this.source, char ?? '<EOF>', this.position.globalPosition, this.position.line, this.position.inlinePosition),
+            );
         }
 
         tokens.push({

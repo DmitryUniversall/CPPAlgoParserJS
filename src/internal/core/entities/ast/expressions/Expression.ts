@@ -20,12 +20,14 @@ import TernaryExpression from './expressions/other/TernaryExpression';
 import CallExpression from './expressions/other/CallExpression';
 import IndexExpression from './expressions/other/IndexExpression';
 import ConstructorCallExpression from './expressions/other/ConstructorCallExpression';
+import PrefixDecrementExpression from './expressions/prefix/PrefixDecrementExpression';
 
 type Expression =
     | DerefExpression
     | AddressExpression
     | NegateExpression
     | PrefixIncrementExpression
+    | PrefixDecrementExpression
     | NewExpression
     | KeywordExpression
     | IdentExpression

@@ -2,6 +2,7 @@ import Lexer from './main/parser/Lexer';
 import Token from './core/entities/token/Token';
 import Parser from './main/parser/Parser';
 import Statement from './core/entities/ast/statements/Statement';
+import AvroraGenerator from './main/generator/avrora/AvroraGenerator';
 
 function main() {
     // noinspection CheckDtdRefs
@@ -135,7 +136,28 @@ function main() {
 
     const parser = new Parser(input, tokens, 0);
     const statements: Statement[] = parser.parseAlgorithm();
-    console.log(statements);
+
+    const generator = new AvroraGenerator(input, statements, 0);
+    const rows = generator.generateRowsForAlgorithm()
+
+    const w = { num: 5, cond: 100, act: 150, next: 10 };
+    for (let row of rows) {
+        console.log(
+            `${(!!row.number ? row.number : -1).toString().padEnd(w.num)} | ` +
+                `${(!!row.condition ? row.condition : 'null').padEnd(w.cond)} | ` +
+                `${(!!row.action ? row.action : 'null').padEnd(w.act)} | ` +
+                `${(!!row.next ? row.next : -1).toString().padEnd(w.next)}`,
+        );
+
+        if (row.subrow) {
+            console.log(
+                `${' '.padEnd(w.num)} | ` +
+                    `${(!!row.subrow.condition ? row.subrow.condition : 'null').padEnd(w.cond)} | ` +
+                    `${(!!row.subrow.action ? row.subrow.action : 'null').padEnd(w.act)} | ` +
+                    `${(!!row.subrow.next ? row.subrow.next : -1).toString().padEnd(w.next)}`,
+            );
+        }
+    }
 }
 
 main();
