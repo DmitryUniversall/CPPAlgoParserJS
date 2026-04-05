@@ -1,5 +1,5 @@
-import PostfixTypeModifier from './PostfixTypeModifier';
-import PostfixTypeModifierKind from './PostfixTypeModifierKind';
+import PostfixTypeModifier from './modifiers/PostfixTypeModifier';
+import PostfixTypeModifierKind from './modifiers/PostfixTypeModifierKind';
 
 export const postfixTypeModifiers: Record<PostfixTypeModifierKind, PostfixTypeModifier> = {
     [PostfixTypeModifierKind.PTR]: { kind: PostfixTypeModifierKind.PTR, literal: '*' },

@@ -8,8 +8,8 @@ import ASTNodeType from '../../core/entities/ast/ASTNodeType';
 import TypeExpression from '../../core/entities/ast/type/TypeExpression';
 import { prefixTypeModifierLiteralsMap } from '../../core/entities/modifier/type/prefix/prefix_modifiers';
 import { postfixTypeModifierLiteralsMap } from '../../core/entities/modifier/type/postfix/postfix_modifiers';
-import PostfixTypeModifier from '../../core/entities/modifier/type/postfix/PostfixTypeModifier';
-import PrefixTypeModifier from '../../core/entities/modifier/type/prefix/PrefixTypeModifier';
+import PostfixTypeModifier from '../../core/entities/modifier/type/postfix/modifiers/PostfixTypeModifier';
+import PrefixTypeModifier from '../../core/entities/modifier/type/prefix/modifiers/PrefixTypeModifier';
 
 export default class TypeParser extends TokenParser {
     private isPostfixTypeModifier(token: Token | null): boolean {

@@ -1,5 +1,5 @@
-import PrefixTypeModifier from '../../../modifier/type/prefix/PrefixTypeModifier';
-import PostfixTypeModifier from '../../../modifier/type/postfix/PostfixTypeModifier';
+import PrefixTypeModifier from '../../../modifier/type/prefix/modifiers/PrefixTypeModifier';
+import PostfixTypeModifier from '../../../modifier/type/postfix/modifiers/PostfixTypeModifier';
 import BaseTypeExpression from '../BaseTypeExpression';
 
 export default interface TypeTypeExpression extends BaseTypeExpression {
