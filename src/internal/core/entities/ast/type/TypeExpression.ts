@@ -1,4 +1,4 @@
-import TypeTypeExpression from './generics/TypeTypeExpression';
+import TypeTypeExpression from './type_expressions/TypeTypeExpression';
 
 type TypeExpression = TypeTypeExpression;
 
