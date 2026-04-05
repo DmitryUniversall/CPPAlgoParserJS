@@ -1,8 +1,5 @@
-import TypeExpressionType from './TypeExpressionType';
-import ASTEntity from '../ASTEntity';
-import ASTNodeType from '../ASTNodeType';
+import TypeTypeExpression from './generics/TypeTypeExpression';
 
-export default interface TypeExpression extends ASTEntity {
-    nodeType: ASTNodeType.TYPE;
-    type: TypeExpressionType;
-}
+type TypeExpression = TypeTypeExpression;
+
+export default TypeExpression;

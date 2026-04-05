@@ -5,9 +5,9 @@ import TokenParser from '../../core/parser/TokenParser';
 import OperatorType from '../../core/entities/operator/OperatorType';
 import TypeExpressionType from '../../core/entities/ast/type/TypeExpressionType';
 import ASTNodeType from '../../core/entities/ast/ASTNodeType';
-import TypeTypeExpression from '../../core/entities/ast/type/generics/TypeTypeExpression';
-import { prefixTypeModifierLiteralsMap } from '../../core/entities/modifier/type/prefix/modifiers';
-import { postfixTypeModifierLiteralsMap } from '../../core/entities/modifier/type/postfix/modifiers';
+import TypeExpression from '../../core/entities/ast/type/TypeExpression';
+import { prefixTypeModifierLiteralsMap } from '../../core/entities/modifier/type/prefix/prefix_modifiers';
+import { postfixTypeModifierLiteralsMap } from '../../core/entities/modifier/type/postfix/postfix_modifiers';
 import PostfixTypeModifier from '../../core/entities/modifier/type/postfix/PostfixTypeModifier';
 import PrefixTypeModifier from '../../core/entities/modifier/type/prefix/PrefixTypeModifier';
 
@@ -22,7 +22,7 @@ export default class TypeParser extends TokenParser {
         return prefixTypeModifierLiteralsMap[token.text] !== undefined;
     }
 
-    public parseType(): TypeTypeExpression {
+    public parseType(): TypeExpression {
         // const ... A
         const prefixModifiers: PrefixTypeModifier[] = [];
         while (this.isPrefixTypeModifier(this.peek())) prefixModifiers.push(prefixTypeModifierLiteralsMap[this.nextOrThrow().text]); // TODO: Search 2 times; Refactor
