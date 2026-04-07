@@ -1,6 +1,4 @@
-import TokenParser from '../../core/parser/TokenParser';
 import TokenType from '../../core/entities/token/TokenType';
-import TypeParser from './TypeParser';
 import ASTNodeType from '../../core/entities/ast/ASTNodeType';
 import StatementType from '../../core/entities/ast/statements/StatementType';
 import DeclarationInfo from '../../core/entities/ast/statements/statements/declaration/DeclarationInfo';
@@ -20,12 +18,11 @@ import ExpressionStatement from '../../core/entities/ast/statements/statements/E
 import Token from '../../core/entities/token/Token';
 import Statement from '../../core/entities/ast/statements/Statement';
 import DoWhileStatement from '../../core/entities/ast/statements/statements/DoWhileStatement';
+import GenericTokenParser from '../common/parser/GenericTokenParser';
 
-type TypeLookAheadResult = { typeExpression: TypeExpression; endPosition: number };
-
-export default class Parser extends TokenParser {
+export default class Parser extends GenericTokenParser {
     private isDeclarationStart(): boolean {
-        let pointer = this.position;
+        let pointer: number = this.position;
 
         try {
             const { endPosition } = this.typeLookAhead();
@@ -40,30 +37,6 @@ export default class Parser extends TokenParser {
         if (!this.tokens[pointer] || this.tokens[pointer].tokenType !== TokenType.IDENTIFIER) return false;
 
         return true;
-    }
-
-    private typeLookAhead(): TypeLookAheadResult {
-        const parser = new TypeParser(this.source, this.tokens, this.position);
-        const typeExpression = parser.parseTypeExpression();
-
-        return {
-            typeExpression: typeExpression,
-            endPosition: parser.currentPosition,
-        };
-    }
-
-    private parseTypeExpression(): TypeExpression {
-        const parser = new TypeParser(this.source, this.tokens, this.position);
-        const result: TypeExpression = parser.parseTypeExpression();
-        this.position = parser.currentPosition;
-        return result;
-    }
-
-    private parseExpression(): Expression {
-        const parser = new PrattParser(this.source, this.tokens, this.position);
-        const result: Expression = parser.parseExpression();
-        this.position = parser.currentPosition;
-        return result;
     }
 
     private parseConstructorCallExpression(name: string): ConstructorCallExpression {
@@ -195,7 +168,7 @@ export default class Parser extends TokenParser {
         const condition: Expression = this.parseExpression();
         this.expectNextToken(TokenType.R_PAREN);
 
-        this.expectNextToken(TokenType.SEMI)
+        this.expectNextToken(TokenType.SEMI);
 
         return {
             nodeType: ASTNodeType.STATEMENT,
