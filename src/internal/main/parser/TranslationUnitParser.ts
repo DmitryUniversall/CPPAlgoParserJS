@@ -7,13 +7,14 @@ import TopLevelDeclarationStatement from '../../core/entities/ast/top_level/decl
 import GenericTokenParser from '../common/parser/GenericTokenParser';
 import TypedConstructLookAheadResult from '../common/entities/TypedConstructLookAheadResult';
 import TypedConstructKind from '../common/entities/TypedConstructKind';
-import QualifiedNamePart from '../../core/entities/qualified_name/QualifiedNamePart';
 import Token from '../../core/entities/token/Token';
 import { operators } from '../../core/entities/operator/operators/operators';
 import Statement from '../../core/entities/ast/statements/Statement';
 import Parser from './Parser';
 import StatementType from '../../core/entities/ast/statements/StatementType';
 import TopLevelDeclarationType from '../../core/entities/ast/top_level/TopLevelDeclarationType';
+import TypeExpression from '../../core/entities/ast/type/TypeExpression';
+import FunctionParameter from '../../core/entities/ast/top_level/declarations/FunctionParameter';
 
 export default class TranslationUnitParser extends GenericTokenParser {
     private parseStatement(): Statement {
@@ -24,15 +25,43 @@ export default class TranslationUnitParser extends GenericTokenParser {
     }
 
     private parseFunctionDefinition(): FunctionDefinition {
-        const nameParts: QualifiedNamePart[] = [];
+        const returnTypeExpr: TypeExpression = this.parseTypeExpression();
+
+        const nameParts: string[] = [];
+        nameParts.push(this.expectNextToken(TokenType.IDENTIFIER).text);
 
         while (this.peek()?.text === operators.namespaceAccess.literal) {
             this.expectNextToken(TokenType.OPERATOR, operators.namespaceAccess.literal);
             const part: Token = this.expectNextToken(TokenType.IDENTIFIER);
-            nameParts.push({ name: part.text });
+            nameParts.push(part.text);
         }
 
-        // TODO
+        this.expectNextToken(TokenType.L_PAREN);
+
+        const params: FunctionParameter[] = [];
+        while (this.peek()?.tokenType !== TokenType.R_PAREN) {
+            const paramType: TypeExpression = this.parseTypeExpression();
+            const paramName: Token = this.expectNextToken(TokenType.IDENTIFIER);
+            if (this.peek()?.tokenType !== TokenType.R_PAREN) this.expectNextToken(TokenType.COMMA);
+            params.push({ name: paramName.text, type: paramType });
+        }
+
+        this.expectNextToken(TokenType.R_PAREN);
+
+        const body: Statement = this.parseStatement();
+        if (body.type !== StatementType.BLOCK_STATEMENT) throw Error('Expected block statement after function declaration');
+
+        return {
+            nodeType: ASTNodeType.TOP_LEVEL_DECLARATION,
+            type: TopLevelDeclarationType.FUNCTION_DEFINITION,
+            returnType: returnTypeExpr,
+            name: {
+                name: nameParts[nameParts.length - 1],
+                scope: nameParts.slice(0, nameParts.length - 1),
+            },
+            params: params,
+            body: body,
+        };
     }
 
     private parseDeclarationStatement(): TopLevelDeclarationStatement {

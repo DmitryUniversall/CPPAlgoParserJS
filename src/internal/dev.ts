@@ -3,174 +3,68 @@ import Token from './core/entities/token/Token';
 import Parser from './main/parser/Parser';
 import Statement from './core/entities/ast/statements/Statement';
 import AvroraGenerator from './main/generator/avrora/AvroraGenerator';
+import TranslationUnitParser from './main/parser/TranslationUnitParser';
+import TranslationUnit from './core/entities/ast/translation_unit/TranslationUnit';
 
 function main() {
     // noinspection CheckDtdRefs
     const input = `
-        do {
-            cout << "Test" << endl;
-            if (test > 0) {
-                cout << "Test2" << endl;
-            }
-        } while (i < 10);
-        
-        while (i < 10) {
-            if (test > 0) {
-                cout << "Test2" << endl;
-            }
-        }
+        int MyClass::testFunc(int a, int b) {
+            do {
+                cout << "Test" << endl;
+                if (test > 0) {
+                    cout << "Test2" << endl;
+                }
+            } while (i < 10);
             
-        cout << "Initial state" << endl;
-        int n;
-        cin >> n;
-        
-        n += 1;
-        n -= 1;
-        object.n += 1;
-        object.n -= 1;
-    
-        const vector<const NetworkStorage*> devices(1, 2);
-    
-        for (int i = 0; i < n; i++) {
-            string name;
-            int speed, capacity;
-            cin >> name >> speed >> capacity;
-    
-            devices.push_back(new NetworkStorage(name, speed, capacity));
+            while (i < 10) {
+                if (test > 0) {
+                    cout << "Test2" << endl;
+                }
+            }
+                
+            cout << "Initial state" << endl;
+            int n;
+            cin >> n;
             
-            if (test > 0) {
-                cout << "Test2" << endl;
-            }
+            n += 1;
+            n -= 1;
+            object.n += 1;
+            object.n -= 1;
         }
-    
-        devices.push_back(nullptr);
-    
-        cout << "Initial state" << endl;
-    
-        const size_t devices_size = devices.size();
-    
-        for (size_t i = 0; i < devices_size; i++) {
-            const NetworkStorage* device = devices[i];
-    
-            if (device != nullptr) {
-                device->print();
-            } else {
-                cout << "Empty pointer" << endl;
-            }
-        }
-    
-        int minSpeed;
-        cin >> minSpeed;
-    
-        for (size_t i = 0; i < devices_size; i++) {
-            const NetworkStorage* device = devices[i];
-    
-            if (device != nullptr && device->getSpeed() < minSpeed) {
-                const string name = device->getName();
-                const int capacity = device->getCapacity();
-    
-                delete device;
-    
-                device = new NetworkStorage(name, 2 * minSpeed, capacity);
-            }
-        }
-    
-        cout << "Modified state" << endl;
-    
-        for (size_t i = 0; i < devices_size; i++) {
-            const NetworkStorage* device = devices[i];
-    
-            if (device != nullptr) {
-                device->print();
-            } else {
-                cout << "Empty pointer" << endl;
-            }
-    
-            delete device;
-        }
-        cout << device.test << endl;
-        cout << device->test << endl;
-        cout << device.getTest() << endl;
-        
-        const MyVector<int>* ptr = new MyVector<int>(10, 0);
-    
-        int a = 1, b = 2, c;
-        c = a + b * 3;
-        
-        int arr[10];
-        arr[0] = c;
-        
-        if (c > 10 && a != b) {
-            ptr->push_back(c);
-        } else {
-            ptr->push_back(a + b);
-        }
-        
-        for (int i = 0; i < 5; i++) {
-            arr[i] = i << 1;
-        }
-        
-        while (a < 100) {
-            a = a + (b > 5 ? b : 1);
-            ++a;
-        }
-        
-        int* x = &a;
-        int y = *x;
-        
-        y = (a > b) ? a : b;
-        
-        MyObject obj;
-        obj.value = y;
-        obj.increment();
-        
-        MyObject* objPtr = new MyObject();
-        objPtr->value = obj.value;
-        objPtr->increment();
-        
-        int result = objPtr->getValue() + obj.getValue();
-        
-        int z = (a = b = 5);
-        
-        string message = "Hello world";
-        
-        delete ptr;
-        delete objPtr;
-    
-        object.x = new NetworkStorage(name, speed, capacity);
-        sensor.Sensor::change(a, b);
-        std::cout << "test" << endl;
-        std::cin >> test;
-        cout << sensor.Sensor::change(a, b) << endl;
     `;
 
     const lexer = new Lexer(input);
     const tokens: Token[] = lexer.tokenize();
 
-    const parser = new Parser(input, tokens, 0);
-    const statements: Statement[] = parser.parseAlgorithm();
+    const translationUnitParser = new TranslationUnitParser(input, tokens, 0);
+    const translationUnit: TranslationUnit = translationUnitParser.parseTranslationUnit();
+    console.log(translationUnit);
 
-    const generator = new AvroraGenerator(input, statements, 0);
-    const rows = generator.generateRowsForAlgorithm()
-
-    const w = { num: 5, cond: 100, act: 150, next: 10 };
-    for (let row of rows) {
-        console.log(
-            `${(!!row.number ? row.number : -1).toString().padEnd(w.num)} | ` +
-                `${(!!row.condition ? row.condition : 'null').padEnd(w.cond)} | ` +
-                `${(!!row.action ? row.action : 'null').padEnd(w.act)} | ` +
-                `${(!!row.next ? row.next : -1).toString().padEnd(w.next)}`,
-        );
-
-        if (row.subrow) {
-            console.log(
-                `${' '.padEnd(w.num)} | ` +
-                    `${(!!row.subrow.condition ? row.subrow.condition : 'null').padEnd(w.cond)} | ` +
-                    `${(!!row.subrow.action ? row.subrow.action : 'null').padEnd(w.act)} | ` +
-                    `${(!!row.subrow.next ? row.subrow.next : -1).toString().padEnd(w.next)}`,
-            );
-        }
-    }
+    // const parser = new Parser(input, tokens, 0);
+    // const statements: Statement[] = parser.parseAlgorithm();
+    //
+    // const generator = new AvroraGenerator(input, statements, 0);
+    // const rows = generator.generateRowsForAlgorithm()
+    //
+    // const w = { num: 5, cond: 100, act: 150, next: 10 };
+    // for (let row of rows) {
+    //     console.log(
+    //         `${(!!row.number ? row.number : -1).toString().padEnd(w.num)} | ` +
+    //             `${(!!row.condition ? row.condition : 'null').padEnd(w.cond)} | ` +
+    //             `${(!!row.action ? row.action : 'null').padEnd(w.act)} | ` +
+    //             `${(!!row.next ? row.next : -1).toString().padEnd(w.next)}`,
+    //     );
+    //
+    //     if (row.subrow) {
+    //         console.log(
+    //             `${' '.padEnd(w.num)} | ` +
+    //                 `${(!!row.subrow.condition ? row.subrow.condition : 'null').padEnd(w.cond)} | ` +
+    //                 `${(!!row.subrow.action ? row.subrow.action : 'null').padEnd(w.act)} | ` +
+    //                 `${(!!row.subrow.next ? row.subrow.next : -1).toString().padEnd(w.next)}`,
+    //         );
+    //     }
+    // }
 }
 
 main();

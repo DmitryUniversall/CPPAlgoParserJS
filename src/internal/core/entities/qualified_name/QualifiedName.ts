@@ -1,5 +1,4 @@
-import QualifiedNamePart from './QualifiedNamePart';
-
 export default interface QualifiedName {
-    parts: QualifiedNamePart[];
+    name: string;
+    scope: string[];
 }
