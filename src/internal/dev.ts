@@ -12,6 +12,7 @@ function main() {
         int MyClass::testFunc(int a, int b) {
             do {
                 cout << "Test" << endl;
+                cout << 'Test' << endl;
                 if (test > 0) {
                     cout << "Test2" << endl;
                 }

@@ -5,7 +5,17 @@ import { createUnexpectedCharErrorMessage } from '../utils/errors';
 import { keywordLiteralsMap } from '../../core/entities/keyword/keywords/keywords';
 
 const operatorLiterals = Object.keys(operatorLiteralsMap).sort((a, b) => b.length - a.length);
-const singleTokenTypes = [TokenType.L_PAREN, TokenType.R_PAREN, TokenType.L_BRACE, TokenType.R_BRACE, TokenType.COLON, TokenType.SEMI, TokenType.COMMA, TokenType.L_BRACKET, TokenType.R_BRACKET];
+const singleTokenTypes = [
+    TokenType.L_PAREN,
+    TokenType.R_PAREN,
+    TokenType.L_BRACE,
+    TokenType.R_BRACE,
+    TokenType.COLON,
+    TokenType.SEMI,
+    TokenType.COMMA,
+    TokenType.L_BRACKET,
+    TokenType.R_BRACKET,
+];
 
 class LexerPositionState {
     public globalPosition: number;
@@ -62,7 +72,7 @@ export default class Lexer {
         }
     }
 
-    private expect(char: string): string {
+    private expectChar(char: string): string {
         const globalPositionBefore: number = this.position.globalPosition;
         const lineBefore: number = this.position.line;
         const inlinePositionBefore: number = this.position.inlinePosition;
@@ -98,7 +108,7 @@ export default class Lexer {
 
     private isStartOfStringLiteral(char: string | null): boolean {
         if (!char) return false;
-        return char === '"';
+        return char === '"' || char === "'";
     }
 
     private skipWhitespaces() {
@@ -142,12 +152,12 @@ export default class Lexer {
         const startLine: number = this.position.line;
         const startInlinePosition: number = this.position.inlinePosition;
 
-        this.expect('"');
+        this.next(); // Skip " or '
 
         let result: string = '';
         while (true) {
             let current: string | null = this.next();
-            if (current === null || current === '"') break;
+            if (current === null || current === '"' || current === "'") break;
 
             if (current === '\\') {
                 const next: string | null = this.next();
