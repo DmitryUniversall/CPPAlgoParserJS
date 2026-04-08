@@ -1,6 +1,7 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import typescript from '@rollup/plugin-typescript';
+import terser from '@rollup/plugin-terser';
 
 export default {
     input: 'src/lib.ts',
@@ -11,6 +12,13 @@ export default {
             format: 'iife',
             name: 'CppParser',
             sourcemap: true,
+        },
+        {
+            file: 'dist/web/cpp-parser.min.js',
+            format: 'iife',
+            name: 'CppParser',
+            sourcemap: true,
+            plugins: [terser()],
         },
         {
             file: 'dist/esm/lib.js',
