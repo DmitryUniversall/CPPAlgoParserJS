@@ -19,6 +19,14 @@ import Token from '../../core/entities/token/Token';
 import Statement from '../../core/entities/ast/statements/Statement';
 import DoWhileStatement from '../../core/entities/ast/statements/statements/DoWhileStatement';
 import GenericTokenParser from '../common/parser/GenericTokenParser';
+import Keyword from '../../core/entities/keyword/Keyword';
+import KeywordKind from '../../core/entities/keyword/KeywordKind';
+
+const keywordExpressionsMap: Record<string, Keyword> = Object.entries(keywords).reduce((acc: Record<string, Keyword>, [_, keyword]) => {
+    if (keyword.kind === KeywordKind.EXPRESSION) acc[keyword.literal] = keyword;
+    return acc;
+}, {});
+
 
 export default class Parser extends GenericTokenParser {
     private isDeclarationStart(): boolean {
@@ -225,6 +233,7 @@ export default class Parser extends GenericTokenParser {
         if (token.text === keywords.DO.literal) return this.parseDoWhileStatement();
         if (token.text === keywords.FOR.literal) return this.parseForStatement();
         if (token.text === keywords.DELETE.literal) return this.parseDeleteStatement();
+        if (keywordExpressionsMap[token.text] !== undefined) return this.parseExpressionStatement();
 
         throw new Error(`Unknown keyword: '${token.text}'`);
     }

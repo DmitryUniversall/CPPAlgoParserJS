@@ -5,9 +5,12 @@ enum KeywordType {
     WHILE = 'WHILE',
     DO = 'DO',
     DELETE = 'DELETE',
-    NULLPTR = 'NULLPTR',
     NEW = 'NEW',
     CONST = 'CONST',
+
+    NULLPTR = 'NULLPTR',
+    BREAK = 'BREAK',
+    CONTINUE = 'CONTINUE',
 }
 
 export default KeywordType;

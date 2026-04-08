@@ -19,6 +19,10 @@ import DoWhileStatement from '../../../core/entities/ast/statements/statements/D
 import WhileStatement from '../../../core/entities/ast/statements/statements/WhileStatement';
 import CallExpression from '../../../core/entities/ast/expressions/expressions/other/CallExpression';
 import BinaryOperationExpression from '../../../core/entities/ast/expressions/expressions/infix/BinaryOperationExpression';
+import AvroraGeneratorLoopContext from './entities/internal/AvroraGeneratorLoopContext';
+import GeneratedAvroraRow from './entities/internal/GeneratedAvroraRow';
+import AvroraGeneratorJumpKind from './entities/internal/AvroraGeneratorJumpKind';
+import KeywordType from '../../../core/entities/keyword/KeywordType';
 
 type CreateRowSchema = {
     number: number;
@@ -27,18 +31,27 @@ type CreateRowSchema = {
     condition?: string | null;
     comment?: string | null;
     subrow?: AvroraRow | null;
+    jumpKind?: AvroraGeneratorJumpKind | null;
 };
 
 export default class AvroraGenerator extends ItemsProcessor<Statement> {
     private rowNumber: number;
+    private readonly loopStack: AvroraGeneratorLoopContext[];
 
     constructor(source: string, items: Statement[], startPosition: number) {
         super(source, items, startPosition);
 
         this.rowNumber = 0;
+        this.loopStack = [];
     }
 
-    private createRowWith(schema: CreateRowSchema): AvroraRow {
+    private getCurrentLoopContextOrThrow(): AvroraGeneratorLoopContext {
+        const context: AvroraGeneratorLoopContext = this.loopStack[this.loopStack.length - 1];
+        if (!context) throw new Error('Accessing loop context used outside of loop (most likely break/continue used outside of loop)');
+        return context;
+    }
+
+    private createRowWith(schema: CreateRowSchema): GeneratedAvroraRow {
         return {
             number: schema.number,
             action: schema.action !== undefined ? schema.action : null,
@@ -46,29 +59,31 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
             condition: schema.condition !== undefined ? schema.condition : null,
             comment: schema.comment !== undefined ? schema.comment : null,
             subrow: schema.subrow !== undefined ? schema.subrow : null,
+            jumpKind: schema.jumpKind !== undefined ? schema.jumpKind : null,
         };
     }
 
-    private createNewActionRow(action: string): AvroraRow {
-        return {
+    private createNewActionRow(action: string, jumpKind?: AvroraGeneratorJumpKind): GeneratedAvroraRow {
+        return this.createRowWith({
             number: ++this.rowNumber,
-            action,
+            action: action,
             next: this.rowNumber + 1,
-            condition: null,
-            comment: null,
-            subrow: null,
-        };
+            jumpKind: jumpKind,
+        });
     }
 
-    private redirectFragmentExits(rows: AvroraRow[], target: number): void {
+    private redirectFragmentExits(rows: GeneratedAvroraRow[], target: number): void {
         // TODO: ??
         if (rows.length === 0) return;
 
         const internalNumbers = new Set(rows.map((row) => row.number));
-
         for (const row of rows) {
-            if (!internalNumbers.has(row.next)) row.next = target;
-            if (row.subrow && !internalNumbers.has(row.subrow.next)) row.subrow.next = target;
+            if (!row.jumpKind && !internalNumbers.has(row.next)) row.next = target;
+
+            if (row.subrow) {
+                const subrow = row.subrow as GeneratedAvroraRow;
+                if (!subrow.jumpKind && !internalNumbers.has(subrow.next)) subrow.next = target;
+            }
         }
     }
 
@@ -154,6 +169,20 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
         return this.generateExpressionString(expression.left) + ' ' + expression.operator.literal + ' ' + this.generateExpressionString(expression.right);
     }
 
+    private generateBreakRow(): GeneratedAvroraRow {
+        const loopContext = this.getCurrentLoopContextOrThrow();
+        const row = this.createNewActionRow('выход из цикла', AvroraGeneratorJumpKind.BREAK);
+        loopContext.breakRows.push(row);
+        return row;
+    }
+
+    private generateContinueRow(): GeneratedAvroraRow {
+        const loopContext = this.getCurrentLoopContextOrThrow();
+        const row = this.createNewActionRow('переход к следующей итерации', AvroraGeneratorJumpKind.CONTINUE);
+        loopContext.continueRows.push(row);
+        return row;
+    }
+
     private generateExpressionString(expression: Expression): string {
         switch (expression.type) {
             case ExpressionType.IDENT_EXPRESSION:
@@ -214,27 +243,39 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
         }
     }
 
-    private generateExpressionRow(expression: Expression): AvroraRow {
+    private generateExpressionRow(expression: Expression): GeneratedAvroraRow {
+        if (expression.type === ExpressionType.KEYWORD_EXPRESSION) {
+            if (expression.keyword.type === KeywordType.BREAK) return this.generateBreakRow();
+            if (expression.keyword.type === KeywordType.CONTINUE) return this.generateContinueRow();
+        }
+
         return this.createNewActionRow(this.generateExpressionString(expression));
     }
 
-    private generateDeleteStatementRow(statement: DeleteStatement): AvroraRow {
+    private generateDeleteStatementRow(statement: DeleteStatement): GeneratedAvroraRow {
         return this.createNewActionRow(`удаление объекта по указателю ${this.generateExpressionString(statement.deleted)}`);
     }
 
-    private generateForStatementRows(statement: ForStatement): AvroraRow[] {
-        const initRow: AvroraRow[] =
+    private generateForStatementRows(statement: ForStatement): GeneratedAvroraRow[] {
+        const initRow: GeneratedAvroraRow[] =
             statement.init.nodeType === ASTNodeType.STATEMENT ? this.generateStatementRows(statement.init) : [this.generateExpressionRow(statement.init)];
 
         const condition: string = this.generateExpressionString(statement.condition);
         const conditionIndex: number = ++this.rowNumber;
-        const conditionRow: AvroraRow = this.createRowWith({
+        const conditionRow: GeneratedAvroraRow = this.createRowWith({
             number: conditionIndex,
             next: this.rowNumber + 1, // If condition is true (points to 1st in body)
             condition: condition,
         });
 
-        let body: AvroraRow[] = this.generateBlockStatementRows(statement.body);
+        const loopContext: AvroraGeneratorLoopContext = {
+            breakRows: [],
+            continueRows: [],
+        };
+
+        this.loopStack.push(loopContext);
+        let body: GeneratedAvroraRow[] = this.generateBlockStatementRows(statement.body);
+        this.loopStack.pop();
 
         const stepNumber = ++this.rowNumber;
         const stepRow = this.createRowWith({
@@ -250,6 +291,10 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
             conditionRow.next = stepNumber;
         }
 
+        const afterLoopNumber: number = this.rowNumber + 1;
+        for (const row of loopContext.continueRows) row.next = stepNumber;
+        for (const row of loopContext.breakRows) row.next = afterLoopNumber;
+
         conditionRow.subrow = this.createRowWith({
             number: conditionIndex,
             next: this.rowNumber + 1, // If condition is false (points to 1st after the cycle)
@@ -258,11 +303,18 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
         return [...initRow, conditionRow, ...body, stepRow];
     }
 
-    private generateDoWhileStatementRows(statement: DoWhileStatement): AvroraRow[] {
-        let body: AvroraRow[] = this.generateBlockStatementRows(statement.body);
+    private generateDoWhileStatementRows(statement: DoWhileStatement): GeneratedAvroraRow[] {
+        const loopContext: AvroraGeneratorLoopContext = {
+            breakRows: [],
+            continueRows: [],
+        };
+
+        this.loopStack.push(loopContext);
+        let body: GeneratedAvroraRow[] = this.generateBlockStatementRows(statement.body);
+        this.loopStack.pop();
 
         const conditionNumber: number = ++this.rowNumber;
-        const conditionRow: AvroraRow = this.createRowWith({
+        const conditionRow: GeneratedAvroraRow = this.createRowWith({
             number: conditionNumber,
             next: body.length !== 0 ? body[0].number : conditionNumber, // If condition is true
             condition: this.generateExpressionString(statement.condition),
@@ -274,19 +326,30 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
 
         if (body.length !== 0) this.redirectFragmentExits(body, conditionNumber);
 
+        const afterLoopNumber: number = this.rowNumber + 1;
+        for (const row of loopContext.continueRows) row.next = conditionNumber;
+        for (const row of loopContext.breakRows) row.next = afterLoopNumber;
+
         return [...body, conditionRow];
     }
 
-    private generateWhileStatementRows(statement: WhileStatement): AvroraRow[] {
+    private generateWhileStatementRows(statement: WhileStatement): GeneratedAvroraRow[] {
         const condition: string = this.generateExpressionString(statement.condition);
         const conditionNumber: number = ++this.rowNumber;
-        const conditionRow: AvroraRow = this.createRowWith({
+        const conditionRow: GeneratedAvroraRow = this.createRowWith({
             number: conditionNumber,
             next: -1, // If condition is true (will be reassigned later)
             condition: condition,
         });
 
-        let body: AvroraRow[] = this.generateBlockStatementRows(statement.body);
+        const loopContext: AvroraGeneratorLoopContext = {
+            breakRows: [],
+            continueRows: [],
+        };
+
+        this.loopStack.push(loopContext);
+        let body: GeneratedAvroraRow[] = this.generateBlockStatementRows(statement.body);
+        this.loopStack.pop();
 
         if (body.length !== 0) {
             this.redirectFragmentExits(body, conditionNumber);
@@ -294,6 +357,10 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
         } else {
             conditionRow.next = conditionNumber;
         }
+
+        const afterLoopNumber = this.rowNumber + 1;
+        for (const row of loopContext.continueRows) row.next = conditionNumber;
+        for (const row of loopContext.breakRows) row.next = afterLoopNumber;
 
         conditionRow.subrow = this.createRowWith({
             number: conditionNumber,
@@ -303,16 +370,16 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
         return [conditionRow, ...body];
     }
 
-    private generateIfStatementRows(statement: IfStatement): AvroraRow[] {
+    private generateIfStatementRows(statement: IfStatement): GeneratedAvroraRow[] {
         const conditionNumber: number = ++this.rowNumber;
-        const conditionRow: AvroraRow = this.createRowWith({
+        const conditionRow: GeneratedAvroraRow = this.createRowWith({
             number: conditionNumber,
             next: -1, // If condition is true (will be reassigned later)
             condition: this.generateExpressionString(statement.condition),
         });
 
-        const thenBody: AvroraRow[] = this.generateBlockStatementRows(statement.thenStmt);
-        const elseBody: AvroraRow[] = statement.elseStmt ? this.generateBlockStatementRows(statement.elseStmt) : [];
+        const thenBody: GeneratedAvroraRow[] = this.generateBlockStatementRows(statement.thenStmt);
+        const elseBody: GeneratedAvroraRow[] = statement.elseStmt ? this.generateBlockStatementRows(statement.elseStmt) : [];
 
         const afterIfNumber: number = this.rowNumber + 1;
         conditionRow.next = thenBody.length > 0 ? thenBody[0].number : afterIfNumber;
@@ -321,12 +388,13 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
             next: elseBody.length > 0 ? elseBody[0].number : afterIfNumber, // If condition is false
         });
 
-        if (thenBody.length > 0) thenBody[thenBody.length - 1].next = afterIfNumber;
+        this.redirectFragmentExits(thenBody, afterIfNumber);
+        this.redirectFragmentExits(elseBody, afterIfNumber);
 
         return [conditionRow, ...thenBody, ...elseBody];
     }
 
-    private generateDeclarationStatementRows(statement: DeclarationStatement): AvroraRow[] {
+    private generateDeclarationStatementRows(statement: DeclarationStatement): GeneratedAvroraRow[] {
         const type: string = this.generateTypeExpressionString(statement.varType);
         const varType: string = statement.varType.prefixModifiers.some((modifier) => modifier.kind === PrefixTypeModifierKind.CONST)
             ? 'константы'
@@ -344,11 +412,11 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
         });
     }
 
-    private generateBlockStatementRows(statement: BlockStatement): AvroraRow[] {
+    private generateBlockStatementRows(statement: BlockStatement): GeneratedAvroraRow[] {
         return statement.body.flatMap((bodyStatement) => this.generateStatementRows(bodyStatement));
     }
 
-    private generateStatementRows(statement: Statement): AvroraRow[] {
+    private generateStatementRows(statement: Statement): GeneratedAvroraRow[] {
         switch (statement.type) {
             case StatementType.DELETE_STATEMENT:
                 return [this.generateDeleteStatementRow(statement)];
@@ -372,12 +440,12 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
         }
     }
 
-    public generateExpressionStatementRow(statement: ExpressionStatement): AvroraRow {
+    public generateExpressionStatementRow(statement: ExpressionStatement): GeneratedAvroraRow {
         return this.generateExpressionRow(statement.expr);
     }
 
     public generateRowsForAlgorithm(): AvroraRow[] {
-        const rows: AvroraRow[] = [];
+        const rows: GeneratedAvroraRow[] = [];
 
         while (this.peek() != null) {
             const r = this.generateStatementRows(this.nextOrThrow());

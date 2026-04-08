@@ -9,21 +9,18 @@ import TranslationUnit from './core/entities/ast/translation_unit/TranslationUni
 function main() {
     // noinspection CheckDtdRefs
     const input = `
-        int MyClass::testFunc(int a, int b) {
-            do {
+            while (i < 10) {
                 cout << "Test" << endl;
                 cout << 'Test' << endl;
-                if (test > 0) {
-                    cout << "Test2" << endl;
-                }
-            } while (i < 10);
-            
-            while (i < 10) {
-                if (test > 0) {
-                    cout << "Test2" << endl;
-                }
-            }
                 
+                if (test > 0) {
+                    cout << "Test2" << endl;
+                    break;
+                }
+                
+                continue;
+            }
+            
             cout << "Initial state" << endl;
             int n;
             cin >> n;
@@ -32,40 +29,39 @@ function main() {
             n -= 1;
             object.n += 1;
             object.n -= 1;
-        }
     `;
 
     const lexer = new Lexer(input);
     const tokens: Token[] = lexer.tokenize();
 
-    const translationUnitParser = new TranslationUnitParser(input, tokens, 0);
-    const translationUnit: TranslationUnit = translationUnitParser.parseTranslationUnit();
-    console.log(translationUnit);
+    // const translationUnitParser = new TranslationUnitParser(input, tokens, 0);
+    // const translationUnit: TranslationUnit = translationUnitParser.parseTranslationUnit();
+    // console.log(translationUnit);
 
-    // const parser = new Parser(input, tokens, 0);
-    // const statements: Statement[] = parser.parseAlgorithm();
-    //
-    // const generator = new AvroraGenerator(input, statements, 0);
-    // const rows = generator.generateRowsForAlgorithm()
-    //
-    // const w = { num: 5, cond: 100, act: 150, next: 10 };
-    // for (let row of rows) {
-    //     console.log(
-    //         `${(!!row.number ? row.number : -1).toString().padEnd(w.num)} | ` +
-    //             `${(!!row.condition ? row.condition : 'null').padEnd(w.cond)} | ` +
-    //             `${(!!row.action ? row.action : 'null').padEnd(w.act)} | ` +
-    //             `${(!!row.next ? row.next : -1).toString().padEnd(w.next)}`,
-    //     );
-    //
-    //     if (row.subrow) {
-    //         console.log(
-    //             `${' '.padEnd(w.num)} | ` +
-    //                 `${(!!row.subrow.condition ? row.subrow.condition : 'null').padEnd(w.cond)} | ` +
-    //                 `${(!!row.subrow.action ? row.subrow.action : 'null').padEnd(w.act)} | ` +
-    //                 `${(!!row.subrow.next ? row.subrow.next : -1).toString().padEnd(w.next)}`,
-    //         );
-    //     }
-    // }
+    const parser = new Parser(input, tokens, 0);
+    const statements: Statement[] = parser.parseAlgorithm();
+
+    const generator = new AvroraGenerator(input, statements, 0);
+    const rows = generator.generateRowsForAlgorithm()
+
+    const w = { num: 5, cond: 100, act: 150, next: 10 };
+    for (let row of rows) {
+        console.log(
+            `${(!!row.number ? row.number : -1).toString().padEnd(w.num)} | ` +
+                `${(!!row.condition ? row.condition : 'null').padEnd(w.cond)} | ` +
+                `${(!!row.action ? row.action : 'null').padEnd(w.act)} | ` +
+                `${(!!row.next ? row.next : -1).toString().padEnd(w.next)}`,
+        );
+
+        if (row.subrow) {
+            console.log(
+                `${' '.padEnd(w.num)} | ` +
+                    `${(!!row.subrow.condition ? row.subrow.condition : 'null').padEnd(w.cond)} | ` +
+                    `${(!!row.subrow.action ? row.subrow.action : 'null').padEnd(w.act)} | ` +
+                    `${(!!row.subrow.next ? row.subrow.next : -1).toString().padEnd(w.next)}`,
+            );
+        }
+    }
 }
 
 main();

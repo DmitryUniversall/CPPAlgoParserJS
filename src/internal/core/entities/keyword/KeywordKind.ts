@@ -1,8 +1,8 @@
 enum KeywordKind {
-    ACTION = 'action',
-    CONTROL = 'control',
-    EXPRESSION = 'expression',
-    MODIFIER = 'modifier',
+    ACTION = 'ACTION',
+    CONTROL = 'CONTROL',
+    EXPRESSION = 'EXPRESSION',
+    MODIFIER = 'MODIFIER',
 }
 
 export default KeywordKind;

@@ -15,6 +15,8 @@ export const keywords: Record<KeywordType, Keyword> = {
     [KeywordType.CONST]: { type: KeywordType.CONST, kind: KeywordKind.MODIFIER, literal: 'const' },
 
     [KeywordType.NULLPTR]: { type: KeywordType.NULLPTR, kind: KeywordKind.EXPRESSION, literal: 'nullptr' },
+    [KeywordType.BREAK]: { type: KeywordType.BREAK, kind: KeywordKind.EXPRESSION, literal: 'break' },
+    [KeywordType.CONTINUE]: { type: KeywordType.CONTINUE, kind: KeywordKind.EXPRESSION, literal: 'continue' },
 };
 
 export const keywordLiteralsMap: Record<string, Keyword> = Object.entries(keywords).reduce((acc: Record<string, Keyword>, [_, keyword]) => {

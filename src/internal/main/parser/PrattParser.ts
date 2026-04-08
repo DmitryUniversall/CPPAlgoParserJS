@@ -15,6 +15,7 @@ import TernaryExpression from '../../core/entities/ast/expressions/expressions/o
 import CallExpression from '../../core/entities/ast/expressions/expressions/other/CallExpression';
 import IndexExpression from '../../core/entities/ast/expressions/expressions/other/IndexExpression';
 import ConstructorCallExpression from '../../core/entities/ast/expressions/expressions/other/ConstructorCallExpression';
+import KeywordKind from '../../core/entities/keyword/KeywordKind';
 
 const prefixOperators: Record<string, Operator> = Object.entries(operators).reduce((acc: Record<string, Operator>, [_, config]) => {
     if (config.prefix) acc[config.literal] = config;
@@ -31,8 +32,8 @@ const postfixOperators: Record<string, Operator> = Object.entries(operators).red
     return acc;
 }, {});
 
-const keywordExpressionsMap: Record<string, Keyword> = [keywords.NULLPTR].reduce((acc: Record<string, Keyword>, keyword) => {
-    acc[keyword.literal] = keyword;
+const keywordExpressionsMap: Record<string, Keyword> = Object.entries(keywords).reduce((acc: Record<string, Keyword>, [_, keyword]) => {
+    if (keyword.kind === KeywordKind.EXPRESSION) acc[keyword.literal] = keyword;
     return acc;
 }, {});
 
