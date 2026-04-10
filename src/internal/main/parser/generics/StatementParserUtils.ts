@@ -1,20 +1,28 @@
 import TokenParser from '../../../core/parser/TokenParser';
 import Token from '../../../core/entities/token/Token';
 import TypeExpression from '../../../core/entities/ast/type/TypeExpression';
-import TypeParser from '../../parser/TypeParser';
+import TypeParser from '../TypeParser';
 import Expression from '../../../core/entities/ast/expressions/Expression';
-import PrattParser from '../../parser/PrattParser';
+import PrattParser from '../PrattParser';
 import TokenType from '../../../core/entities/token/TokenType';
 import { operators } from '../../../core/entities/operator/operators/operators';
 import TypeLookAheadResult from '../entities/TypeLookAheadResult';
 import TypedConstructLookAheadResult from '../entities/TypedConstructLookAheadResult';
 import TypedConstructKind from '../entities/TypedConstructKind';
 import { createUnexpectedTokenErrorMessage } from '../../utils/errors';
+import QualifiedName from '../../../core/entities/qualified_name/QualifiedName';
 
-export default class GenericTokenParser extends TokenParser {
+export default class StatementParserUtils extends TokenParser {
     protected parseTypeExpression(): TypeExpression {
         const parser = new TypeParser(this.source, this.tokens, this.position);
         const result: TypeExpression = parser.parseTypeExpression();
+        this.position = parser.currentPosition;
+        return result;
+    }
+
+    protected parseTypeParameters(): TypeExpression[] {
+        const parser = new TypeParser(this.source, this.tokens, this.position);
+        const result: TypeExpression[] = parser.parseTypeParameters();
         this.position = parser.currentPosition;
         return result;
     }
@@ -106,5 +114,21 @@ export default class GenericTokenParser extends TokenParser {
         }
 
         return { kind: TypedConstructKind.NONE };
+    }
+
+    protected parseQualifiedName(): QualifiedName {
+        const nameParts: string[] = [];
+        nameParts.push(this.expectNextToken(TokenType.IDENTIFIER).text);
+
+        while (this.peek()?.text === operators.namespaceAccess.literal) {
+            this.expectNextToken(TokenType.OPERATOR, operators.namespaceAccess.literal);
+            const part: Token = this.expectNextToken(TokenType.IDENTIFIER);
+            nameParts.push(part.text);
+        }
+
+        return {
+            name: nameParts[nameParts.length - 1],
+            scope: nameParts.slice(0, nameParts.length - 1),
+        };
     }
 }

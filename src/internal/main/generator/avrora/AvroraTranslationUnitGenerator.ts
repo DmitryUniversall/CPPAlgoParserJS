@@ -1,4 +1,4 @@
-import FunctionDefinition from '../../../core/entities/ast/top_level/declarations/FunctionDefinition';
+import TopLevelFunctionDefinition from '../../../core/entities/ast/top_level/declarations/TopLevelFunctionDefinition';
 import ObjectDescription from './entities/description/ObjectDescription';
 import FunctionDefinitionDescription from './entities/description/descriptions/FunctionDefinitionDescription';
 import Statement from '../../../core/entities/ast/statements/Statement';
@@ -24,7 +24,9 @@ export default class AvroraTranslationUnitGenerator {
         return generator.generateRowsForAlgorithm();
     }
 
-    private generateDescriptionForFunctionDefinition(definition: FunctionDefinition): FunctionDefinitionDescription {
+    private generateDescriptionForFunctionDefinition(topLevelDefinition: TopLevelFunctionDefinition): FunctionDefinitionDescription {
+        const definition = topLevelDefinition.definition;
+
         return {
             type: ObjectDescriptionType.FUNCTION_DEFINITION,
             returnType: generateAvroraTypeExpressionString(definition.returnType),
@@ -35,7 +37,7 @@ export default class AvroraTranslationUnitGenerator {
     }
 
     private generateDescriptionForTopLevelDeclaration(declaration: TopLevelDeclaration): ObjectDescription {
-        if (declaration.type === TopLevelDeclarationType.FUNCTION_DEFINITION) return this.generateDescriptionForFunctionDefinition(declaration);
+        if (declaration.type === TopLevelDeclarationType.FUNCTION_DECLARATION) return this.generateDescriptionForFunctionDefinition(declaration);
 
         throw new Error(`Unsupported top level declaration type: '${declaration.type}'`);
     }

@@ -14,6 +14,14 @@ export const keywords: Record<KeywordType, Keyword> = {
 
     [KeywordType.CONST]: { type: KeywordType.CONST, kind: KeywordKind.MODIFIER, literal: 'const' },
 
+    [KeywordType.CLASS]: { type: KeywordType.CLASS, kind: KeywordKind.DECLARATION, literal: 'class' },
+
+    [KeywordType.PUBLIC]: { type: KeywordType.PUBLIC, kind: KeywordKind.MODIFIER, literal: 'public' },
+    [KeywordType.PRIVATE]: { type: KeywordType.PRIVATE, kind: KeywordKind.MODIFIER, literal: 'private' },
+    [KeywordType.PROTECTED]: { type: KeywordType.PROTECTED, kind: KeywordKind.MODIFIER, literal: 'protected' },
+
+    [KeywordType.VIRTUAL]: { type: KeywordType.VIRTUAL, kind: KeywordKind.MODIFIER, literal: 'virtual' },
+
     [KeywordType.NULLPTR]: { type: KeywordType.NULLPTR, kind: KeywordKind.EXPRESSION, literal: 'nullptr' },
     [KeywordType.BREAK]: { type: KeywordType.BREAK, kind: KeywordKind.EXPRESSION, literal: 'break' },
     [KeywordType.CONTINUE]: { type: KeywordType.CONTINUE, kind: KeywordKind.EXPRESSION, literal: 'continue' },

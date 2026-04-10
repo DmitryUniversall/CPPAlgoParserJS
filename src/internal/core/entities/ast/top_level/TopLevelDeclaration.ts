@@ -1,6 +1,7 @@
-import FunctionDefinition from './declarations/FunctionDefinition';
-import TopLevelDeclarationStatement from './declarations/TopLevelDeclarationStatement';
+import TopLevelFunctionDefinition from './declarations/TopLevelFunctionDefinition';
+import TopLevelVariableDeclaration from './declarations/TopLevelDeclarationStatement';
+import TopLevelClassDeclaration from './declarations/TopLevelClassDeclaration';
 
-type TopLevelDeclaration = FunctionDefinition | TopLevelDeclarationStatement;
+type TopLevelDeclaration = TopLevelFunctionDefinition | TopLevelVariableDeclaration | TopLevelClassDeclaration;
 
 export default TopLevelDeclaration;

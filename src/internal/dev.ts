@@ -2,34 +2,48 @@ import Lexer from './main/parser/Lexer';
 import Token from './core/entities/token/Token';
 import TranslationUnitParser from './main/parser/TranslationUnitParser';
 import TranslationUnit from './core/entities/ast/translation_unit/TranslationUnit';
-import AvroraTranslationUnitGenerator from './main/generator/avrora/AvroraTranslationUnitGenerator';
-import ObjectDescription from './main/generator/avrora/entities/description/ObjectDescription';
 
 function main() {
     // noinspection CheckDtdRefs
     const input = `
-        int MyClass::testFunc(int a, int b) {
-            while (i < 10) {
-                cout << "Test" << endl;
-                cout << 'Test' << endl;
+        class TestFirst;
+        
+        class TestSecond : public Base1, private Base2<Test2> {
+            private:
+                class Builder {
+                    int i = 0;
+                };
                 
-                if (test > 0) {
-                    cout << "Test2" << endl;
-                    break;
+                int testFunc(int a, int b) {
+                    while (i < 10) {
+                        cout << "Test" << endl;
+                        cout << 'Test' << endl;
+                        
+                        if (test > 0) {
+                            cout << "Test2" << endl;
+                            break;
+                        }
+                        
+                        continue;
+                    }
+                    
+                    cout << "Initial state" << endl;
+                    int n;
+                    cin >> n;
+                    
+                    n += 1;
+                    n -= 1;
+                    object.n += 1;
+                    object.n -= 1;
+                }
+            
+            public:
+                TestSecond(vector<int> array) {
+                    int x = 10;
                 }
                 
-                continue;
-            }
-            
-            cout << "Initial state" << endl;
-            int n;
-            cin >> n;
-            
-            n += 1;
-            n -= 1;
-            object.n += 1;
-            object.n -= 1;
-        }
+                int i = 0;
+        };
     `;
 
     const lexer = new Lexer(input);
@@ -37,11 +51,11 @@ function main() {
 
     const translationUnitParser = new TranslationUnitParser(input, tokens, 0);
     const translationUnit: TranslationUnit = translationUnitParser.parseTranslationUnit();
-    // console.log(translationUnit);
+    console.log(translationUnit);
 
-    const translationUnitGenerator = new AvroraTranslationUnitGenerator(input, translationUnit);
-    const descriptions: ObjectDescription[] = translationUnitGenerator.generateDescriptionsForTranslationUnit();
-    console.log(descriptions);
+    // const translationUnitGenerator = new AvroraTranslationUnitGenerator(input, translationUnit);
+    // const descriptions: ObjectDescription[] = translationUnitGenerator.generateDescriptionsForTranslationUnit();
+    // console.log(descriptions);
 
     // const parser = new Parser(input, tokens, 0);
     // const statements: Statement[] = parser.parseAlgorithm();

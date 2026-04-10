@@ -1,8 +1,7 @@
 enum AccessModifierType {
-    PUBLIC = 'PUBLIC',
-    PRIVATE = 'PRIVATE',
-    PROTECTED = 'PROTECTED',
-    UNKNOWN = 'UNKNOWN',
+    public = 'PUBLIC',
+    private = 'PRIVATE',
+    protected = 'PROTECTED',
 }
 
 export default AccessModifierType;

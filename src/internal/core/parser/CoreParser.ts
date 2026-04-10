@@ -21,6 +21,11 @@ export default class CoreParser<T extends any> {
         return this.hasNext() ? this.items[this.position] : null;
     }
 
+    protected peekOffset(offset: number): T | null {
+        const result: T | undefined = this.items[this.position + offset];
+        return result !== undefined ? result : null;
+    }
+
     protected peekOrThrow(): T {
         if (!this.hasNext()) throw new Error('Next token is required, but was not found (end of file)');
         return this.peek()!!;

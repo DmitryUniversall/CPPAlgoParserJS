@@ -22,6 +22,22 @@ export default class TypeParser extends TokenParser {
         return prefixTypeModifierLiteralsMap[token.text] !== undefined;
     }
 
+    public parseTypeParameters(): TypeExpression[] {
+        const typeParameters: TypeExpression[] = [];
+
+        this.expectNextToken(TokenType.OPERATOR, operators[OperatorType.LT].literal); // Skip '<'
+
+        while (true) {
+            typeParameters.push(this.parseTypeExpression());
+            if (this.peek()?.text === operators[OperatorType.GT].literal) break;
+            this.expectNextToken(TokenType.COMMA);
+        }
+
+        this.expectNextToken(TokenType.OPERATOR, operators[OperatorType.GT].literal); // Skip '>'
+
+        return typeParameters;
+    }
+
     public parseTypeExpression(): TypeExpression {
         // const ... A
         const prefixModifiers: PrefixTypeModifier[] = [];
@@ -30,18 +46,8 @@ export default class TypeParser extends TokenParser {
         let typeToken = this.expectNextToken(TokenType.IDENTIFIER);
 
         // A<...>
-        const typeParameters = [];
-        if (this.peek()?.text === operators[OperatorType.LT].literal) {
-            this.expectNextToken(TokenType.OPERATOR, operators[OperatorType.LT].literal); // Skip '<'
-
-            while (true) {
-                typeParameters.push(this.parseTypeExpression());
-                if (this.peek()?.text === operators[OperatorType.GT].literal) break;
-                this.expectNextToken(TokenType.COMMA);
-            }
-
-            this.expectNextToken(TokenType.OPERATOR, operators[OperatorType.GT].literal); // Skip '>'
-        }
+        let typeParameters: TypeExpression[] = [];
+        if (this.peek()?.text === operators[OperatorType.LT].literal) typeParameters = this.parseTypeParameters();
 
         // A*
         const postfixModifiers: PostfixTypeModifier[] = [];

@@ -2,69 +2,57 @@ import TranslationUnit from '../../core/entities/ast/translation_unit/Translatio
 import TopLevelDeclaration from '../../core/entities/ast/top_level/TopLevelDeclaration';
 import ASTNodeType from '../../core/entities/ast/ASTNodeType';
 import TokenType from '../../core/entities/token/TokenType';
-import FunctionDefinition from '../../core/entities/ast/top_level/declarations/FunctionDefinition';
+import TopLevelFunctionDefinition from '../../core/entities/ast/top_level/declarations/TopLevelFunctionDefinition';
 import TopLevelDeclarationStatement from '../../core/entities/ast/top_level/declarations/TopLevelDeclarationStatement';
-import GenericTokenParser from '../common/parser/GenericTokenParser';
-import TypedConstructLookAheadResult from '../common/entities/TypedConstructLookAheadResult';
-import TypedConstructKind from '../common/entities/TypedConstructKind';
-import Token from '../../core/entities/token/Token';
-import { operators } from '../../core/entities/operator/operators/operators';
+import TypedConstructLookAheadResult from './entities/TypedConstructLookAheadResult';
+import TypedConstructKind from './entities/TypedConstructKind';
 import Statement from '../../core/entities/ast/statements/Statement';
-import Parser from './Parser';
 import StatementType from '../../core/entities/ast/statements/StatementType';
 import TopLevelDeclarationType from '../../core/entities/ast/top_level/TopLevelDeclarationType';
-import TypeExpression from '../../core/entities/ast/type/TypeExpression';
-import FunctionParameter from '../../core/entities/ast/top_level/declarations/FunctionParameter';
+import { keywords } from '../../core/entities/keyword/keywords/keywords';
+import ClassDeclaration from '../../core/entities/ast/constructions/classes/ClassDeclaration';
+import TopLevelClassDeclaration from '../../core/entities/ast/top_level/declarations/TopLevelClassDeclaration';
+import ConstructionParserUtils from './generics/ConstructionParserUtils';
+import FunctionParser from './constructions/FunctionParser';
+import ClassParser from './constructions/ClassParser';
+import FunctionDeclaration from '../../core/entities/ast/constructions/functions/FunctionDeclaration';
 
-export default class TranslationUnitParser extends GenericTokenParser {
-    private parseStatement(): Statement {
-        const parser = new Parser(this.source, this.tokens, this.position);
-        const result: Statement = parser.parseStatement();
+export default class TranslationUnitParser extends ConstructionParserUtils {
+    protected parseFunctionDeclaration(): FunctionDeclaration {
+        const parser = new FunctionParser(this.source, this.tokens, this.position);
+        const result: FunctionDeclaration = parser.parseFunctionDeclaration();
         this.position = parser.currentPosition;
         return result;
     }
 
-    private parseFunctionDefinition(): FunctionDefinition {
-        const returnTypeExpr: TypeExpression = this.parseTypeExpression();
+    protected parseClassDeclaration(): ClassDeclaration {
+        const parser = new ClassParser(this.source, this.tokens, this.position);
+        const result: ClassDeclaration = parser.parseClassDeclaration();
+        this.position = parser.currentPosition;
+        return result;
+    }
 
-        const nameParts: string[] = [];
-        nameParts.push(this.expectNextToken(TokenType.IDENTIFIER).text);
-
-        while (this.peek()?.text === operators.namespaceAccess.literal) {
-            this.expectNextToken(TokenType.OPERATOR, operators.namespaceAccess.literal);
-            const part: Token = this.expectNextToken(TokenType.IDENTIFIER);
-            nameParts.push(part.text);
-        }
-
-        this.expectNextToken(TokenType.L_PAREN);
-
-        const params: FunctionParameter[] = [];
-        while (this.peek()?.tokenType !== TokenType.R_PAREN) {
-            const paramType: TypeExpression = this.parseTypeExpression();
-            const paramName: Token = this.expectNextToken(TokenType.IDENTIFIER);
-            if (this.peek()?.tokenType !== TokenType.R_PAREN) this.expectNextToken(TokenType.COMMA);
-            params.push({ name: paramName.text, type: paramType });
-        }
-
-        this.expectNextToken(TokenType.R_PAREN);
-
-        const body: Statement = this.parseStatement();
-        if (body.type !== StatementType.BLOCK_STATEMENT) throw Error('Expected block statement after function declaration');
+    private parseTopLevelFunctionDefinition(): TopLevelFunctionDefinition {
+        const declaration: FunctionDeclaration = this.parseFunctionDeclaration();
 
         return {
             nodeType: ASTNodeType.TOP_LEVEL_DECLARATION,
-            type: TopLevelDeclarationType.FUNCTION_DEFINITION,
-            returnType: returnTypeExpr,
-            name: {
-                name: nameParts[nameParts.length - 1],
-                scope: nameParts.slice(0, nameParts.length - 1),
-            },
-            params: params,
-            body: body,
+            type: TopLevelDeclarationType.FUNCTION_DECLARATION,
+            declaration: declaration,
         };
     }
 
-    private parseDeclarationStatement(): TopLevelDeclarationStatement {
+    private parseTopLevelClassDeclaration(): TopLevelClassDeclaration {
+        const declaration: ClassDeclaration = this.parseClassDeclaration();
+
+        return {
+            nodeType: ASTNodeType.TOP_LEVEL_DECLARATION,
+            type: TopLevelDeclarationType.CLASS_DECLARATION,
+            declaration: declaration,
+        };
+    }
+
+    private parseTopLevelVariableDeclaration(): TopLevelDeclarationStatement {
         const statement: Statement = this.parseStatement();
         if (statement.type !== StatementType.DECLARATION_STATEMENT) throw Error('Only declaration statements allowed as top level statement');
 
@@ -76,13 +64,19 @@ export default class TranslationUnitParser extends GenericTokenParser {
     }
 
     public parseTopLevelDeclaration(): TopLevelDeclaration {
+        if (this.peek()?.text === keywords.CLASS.literal) return this.parseTopLevelClassDeclaration();
+
         const lookAheadResult: TypedConstructLookAheadResult = this.lookAheadTypedConstruct();
-
-        if (lookAheadResult.kind === TypedConstructKind.FUNCTION_DEFINITION) return this.parseFunctionDefinition();
-        if (lookAheadResult.kind === TypedConstructKind.VARIABLE_DECLARATION) return this.parseDeclarationStatement();
-        if (lookAheadResult.kind === TypedConstructKind.NONE) throw Error('Expected top level declaration');
-
-        throw Error(`Unsupported typed construct kind: '${TypedConstructKind}'`);
+        switch (lookAheadResult.kind) {
+            case TypedConstructKind.FUNCTION_DEFINITION:
+                return this.parseTopLevelFunctionDefinition();
+            case TypedConstructKind.VARIABLE_DECLARATION:
+                return this.parseTopLevelVariableDeclaration();
+            case TypedConstructKind.NONE:
+                throw Error('Expected top level declaration');
+            default:
+                throw Error(`Unsupported typed construct kind: '${TypedConstructKind}'`);
+        }
     }
 
     public parseTranslationUnit(): TranslationUnit {

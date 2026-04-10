@@ -18,33 +18,21 @@ import ExpressionStatement from '../../core/entities/ast/statements/statements/E
 import Token from '../../core/entities/token/Token';
 import Statement from '../../core/entities/ast/statements/Statement';
 import DoWhileStatement from '../../core/entities/ast/statements/statements/DoWhileStatement';
-import GenericTokenParser from '../common/parser/GenericTokenParser';
+import StatementParserUtils from './generics/StatementParserUtils';
 import Keyword from '../../core/entities/keyword/Keyword';
 import KeywordKind from '../../core/entities/keyword/KeywordKind';
+import TypedConstructLookAheadResult from './entities/TypedConstructLookAheadResult';
+import TypedConstructKind from './entities/TypedConstructKind';
 
 const keywordExpressionsMap: Record<string, Keyword> = Object.entries(keywords).reduce((acc: Record<string, Keyword>, [_, keyword]) => {
     if (keyword.kind === KeywordKind.EXPRESSION) acc[keyword.literal] = keyword;
     return acc;
 }, {});
 
-
-export default class Parser extends GenericTokenParser {
+export default class StatementParser extends StatementParserUtils {
     private isDeclarationStart(): boolean {
-        let pointer: number = this.position;
-
-        try {
-            const { endPosition } = this.typeLookAhead();
-            pointer = endPosition;
-        } catch (e) {
-            // console.debug(e); // TODO: Log it?
-            return false;
-        }
-
-        // Expect var name
-        // noinspection RedundantIfStatementJS
-        if (!this.tokens[pointer] || this.tokens[pointer].tokenType !== TokenType.IDENTIFIER) return false;
-
-        return true;
+        const result: TypedConstructLookAheadResult = this.lookAheadTypedConstruct();
+        return result.kind === TypedConstructKind.VARIABLE_DECLARATION;
     }
 
     private parseConstructorCallExpression(name: string): ConstructorCallExpression {

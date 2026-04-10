@@ -4,9 +4,19 @@ enum KeywordType {
     FOR = 'FOR',
     WHILE = 'WHILE',
     DO = 'DO',
+
     DELETE = 'DELETE',
     NEW = 'NEW',
+
     CONST = 'CONST',
+
+    CLASS = 'CLASS',
+
+    PUBLIC = 'PUBLIC',
+    PRIVATE = 'PRIVATE',
+    PROTECTED = 'PROTECTED',
+
+    VIRTUAL = 'VIRTUAL',
 
     NULLPTR = 'NULLPTR',
     BREAK = 'BREAK',
