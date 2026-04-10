@@ -6,6 +6,29 @@ import TranslationUnit from './core/entities/ast/translation_unit/TranslationUni
 function main() {
     // noinspection CheckDtdRefs
     const input = `
+        inline static int testFunc(int a, int b) const noexcept {
+            while (i < 10) {
+                cout << "Test" << endl;
+                cout << 'Test' << endl;
+                
+                if (test > 0) {
+                    cout << "Test2" << endl;
+                    break;
+                }
+                
+                continue;
+            }
+            
+            cout << "Initial state" << endl;
+            int n;
+            cin >> n;
+            
+            n += 1;
+            n -= 1;
+            object.n += 1;
+            object.n -= 1;
+        }
+        
         class TestFirst;
         
         class TestSecond : public Base1, private Base2<Test2> {

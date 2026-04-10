@@ -21,9 +21,10 @@ import ClassDefinition from '../../../core/entities/ast/constructions/classes/Cl
 import ClassName from '../../../core/entities/ast/constructions/classes/ClassName';
 import InheritanceBaseClass from '../../../core/entities/ast/constructions/classes/inheritance/InheritanceBaseClass';
 import FunctionDeclaration from '../../../core/entities/ast/constructions/functions/FunctionDeclaration';
+import FunctionPrefixModifierType from '../../../core/entities/ast/constructions/functions/modifiers/FunctionPrefixModifierType';
 
 export default class ClassParser extends ConstructionParserUtils {
-    private parseFunctionDefinition(): FunctionDeclaration {
+    private parseFunctionDeclaration(): FunctionDeclaration {
         const parser = new FunctionParser(this.source, this.tokens, this.position);
         const result: FunctionDeclaration = parser.parseFunctionDeclaration();
         this.position = parser.currentPosition;
@@ -59,7 +60,10 @@ export default class ClassParser extends ConstructionParserUtils {
         if (current.tokenType === TokenType.IDENTIFIER && current.text === className && this.peekOffset(1)?.tokenType === TokenType.L_PAREN)
             return { kind: ClassMemberLookAheadKind.CONSTRUCTOR };
 
-        let pointer = this.position;
+        if (FunctionPrefixModifierType[current.text.toUpperCase() as keyof typeof FunctionPrefixModifierType] !== undefined)
+            return { kind: ClassMemberLookAheadKind.METHOD };
+
+        let pointer: number = this.position;
 
         try {
             const { endPosition } = this.typeLookAhead();
@@ -68,9 +72,14 @@ export default class ClassParser extends ConstructionParserUtils {
             return { kind: ClassMemberLookAheadKind.NONE };
         }
 
-        if (!this.tokens[pointer] || this.tokens[pointer].tokenType !== TokenType.IDENTIFIER) return { kind: ClassMemberLookAheadKind.NONE };
+        current = this.tokens[pointer];
+
+        if (!current || current.tokenType !== TokenType.IDENTIFIER) return { kind: ClassMemberLookAheadKind.NONE };
+
         pointer++;
-        if (this.tokens[pointer]?.tokenType === TokenType.L_PAREN) return { kind: ClassMemberLookAheadKind.METHOD };
+        current = this.tokens[pointer];
+
+        if (current?.tokenType === TokenType.L_PAREN) return { kind: ClassMemberLookAheadKind.METHOD };
 
         return { kind: ClassMemberLookAheadKind.FIELD };
     }
@@ -87,7 +96,7 @@ export default class ClassParser extends ConstructionParserUtils {
     }
 
     private parseMethod(accessModifier: AccessModifierType): ClassMember {
-        const functionDeclaration: FunctionDeclaration = this.parseFunctionDefinition();
+        const functionDeclaration: FunctionDeclaration = this.parseFunctionDeclaration();
 
         return {
             type: ClassMemberType.METHOD,

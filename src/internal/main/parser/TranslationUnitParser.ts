@@ -18,14 +18,14 @@ import ClassParser from './constructions/ClassParser';
 import FunctionDeclaration from '../../core/entities/ast/constructions/functions/FunctionDeclaration';
 
 export default class TranslationUnitParser extends ConstructionParserUtils {
-    protected parseFunctionDeclaration(): FunctionDeclaration {
+    private parseFunctionDeclaration(): FunctionDeclaration {
         const parser = new FunctionParser(this.source, this.tokens, this.position);
         const result: FunctionDeclaration = parser.parseFunctionDeclaration();
         this.position = parser.currentPosition;
         return result;
     }
 
-    protected parseClassDeclaration(): ClassDeclaration {
+    private parseClassDeclaration(): ClassDeclaration {
         const parser = new ClassParser(this.source, this.tokens, this.position);
         const result: ClassDeclaration = parser.parseClassDeclaration();
         this.position = parser.currentPosition;

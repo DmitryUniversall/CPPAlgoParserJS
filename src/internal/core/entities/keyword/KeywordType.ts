@@ -12,15 +12,26 @@ enum KeywordType {
 
     CLASS = 'CLASS',
 
+    DEFAULT = 'DEFAULT',
+
     PUBLIC = 'PUBLIC',
     PRIVATE = 'PRIVATE',
     PROTECTED = 'PROTECTED',
 
-    VIRTUAL = 'VIRTUAL',
-
     NULLPTR = 'NULLPTR',
     BREAK = 'BREAK',
     CONTINUE = 'CONTINUE',
+
+    VIRTUAL = 'VIRTUAL',
+    STATIC = 'STATIC',
+    INLINE = 'INLINE',
+    CONSTEXPR = 'CONSTEXPR',
+    CONSTEVAL = 'CONSTEVAL',
+    EXPLICIT = 'EXPLICIT',
+    FRIEND = 'FRIEND',
+
+    VOLATILE = 'VOLATILE',
+    NOEXCEPT = 'NOEXCEPT',
 }
 
 export default KeywordType;

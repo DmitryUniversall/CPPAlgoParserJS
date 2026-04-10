@@ -4,6 +4,7 @@ enum KeywordKind {
     EXPRESSION = 'EXPRESSION',
     MODIFIER = 'MODIFIER',
     DECLARATION = 'DECLARATION',
+    DEFINITION = 'DEFINITION',
 }
 
 export default KeywordKind;

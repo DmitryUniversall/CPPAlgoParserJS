@@ -11,6 +11,7 @@ import TypedConstructLookAheadResult from '../entities/TypedConstructLookAheadRe
 import TypedConstructKind from '../entities/TypedConstructKind';
 import { createUnexpectedTokenErrorMessage } from '../../utils/errors';
 import QualifiedName from '../../../core/entities/qualified_name/QualifiedName';
+import FunctionPrefixModifierType from '../../../core/entities/ast/constructions/functions/modifiers/FunctionPrefixModifierType';
 
 export default class StatementParserUtils extends TokenParser {
     protected parseTypeExpression(): TypeExpression {
@@ -65,6 +66,12 @@ export default class StatementParserUtils extends TokenParser {
 
     protected lookAheadTypedConstruct(): TypedConstructLookAheadResult {
         let pointer: number = this.position;
+
+        if (
+            this.peek()?.tokenType === TokenType.KEYWORD &&
+            FunctionPrefixModifierType[this.peek()?.text?.toUpperCase() as keyof typeof FunctionPrefixModifierType] !== undefined
+        )
+            return { kind: TypedConstructKind.FUNCTION_DEFINITION };
 
         try {
             const { endPosition } = this.typeLookAhead();

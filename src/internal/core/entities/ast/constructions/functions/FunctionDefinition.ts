@@ -1,5 +1,7 @@
-import BlockStatement from '../../statements/statements/BlockStatement';
+import DefaultFunctionDefinition from './definitions/DefaultFunctionDefinition';
+import BodyFunctionDefinition from './definitions/BodyFunctionDefinition';
+import DeleteFunctionDefinition from './definitions/DeleteFunctionDefinition';
 
-export default interface FunctionDefinition {
-    body: BlockStatement;
-}
+type FunctionDefinition = DefaultFunctionDefinition | BodyFunctionDefinition | DeleteFunctionDefinition;
+
+export default FunctionDefinition;
