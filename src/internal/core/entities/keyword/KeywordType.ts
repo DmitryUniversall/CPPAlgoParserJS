@@ -19,8 +19,10 @@ enum KeywordType {
     PROTECTED = 'PROTECTED',
 
     NULLPTR = 'NULLPTR',
+
     BREAK = 'BREAK',
     CONTINUE = 'CONTINUE',
+    RETURN = 'RETURN',
 
     VIRTUAL = 'VIRTUAL',
     STATIC = 'STATIC',

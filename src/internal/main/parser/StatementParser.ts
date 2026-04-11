@@ -23,6 +23,7 @@ import Keyword from '../../core/entities/keyword/Keyword';
 import KeywordKind from '../../core/entities/keyword/KeywordKind';
 import TypedConstructLookAheadResult from './entities/TypedConstructLookAheadResult';
 import TypedConstructKind from './entities/TypedConstructKind';
+import ReturnStatement from '../../core/entities/ast/statements/statements/ReturnStatement';
 
 const keywordExpressionsMap: Record<string, Keyword> = Object.entries(keywords).reduce((acc: Record<string, Keyword>, [_, keyword]) => {
     if (keyword.kind === KeywordKind.EXPRESSION) acc[keyword.literal] = keyword;
@@ -94,6 +95,20 @@ export default class StatementParser extends StatementParserUtils {
             nodeType: ASTNodeType.STATEMENT,
             type: StatementType.BLOCK_STATEMENT,
             body: body,
+        };
+    }
+
+    private parseReturnStatement(): ReturnStatement {
+        this.expectNextToken(TokenType.KEYWORD, keywords.RETURN.literal);
+
+        const returned: Expression = this.parseExpression();
+
+        this.expectNextToken(TokenType.SEMI);
+
+        return {
+            nodeType: ASTNodeType.STATEMENT,
+            type: StatementType.RETURN_STATEMENT,
+            returned: returned,
         };
     }
 
@@ -212,7 +227,7 @@ export default class StatementParser extends StatementParserUtils {
         };
     }
 
-    private parseKeywordStatement() {
+    private parseKeywordStatement(): Statement {
         const token: Token = this.peekOrThrow();
         if (token.tokenType !== TokenType.KEYWORD) throw new Error(`Unexpected token type for keyword statement: '${token.tokenType}' ('${token.text}')`);
 
@@ -221,6 +236,7 @@ export default class StatementParser extends StatementParserUtils {
         if (token.text === keywords.DO.literal) return this.parseDoWhileStatement();
         if (token.text === keywords.FOR.literal) return this.parseForStatement();
         if (token.text === keywords.DELETE.literal) return this.parseDeleteStatement();
+        if (token.text === keywords.RETURN.literal) return this.parseReturnStatement();
         if (keywordExpressionsMap[token.text] !== undefined) return this.parseExpressionStatement();
 
         throw new Error(`Unknown keyword: '${token.text}'`);

@@ -23,8 +23,10 @@ export const keywords: Record<KeywordType, Keyword> = {
     [KeywordType.PROTECTED]: { type: KeywordType.PROTECTED, kind: KeywordKind.MODIFIER, literal: 'protected' },
 
     [KeywordType.NULLPTR]: { type: KeywordType.NULLPTR, kind: KeywordKind.EXPRESSION, literal: 'nullptr' },
+
     [KeywordType.BREAK]: { type: KeywordType.BREAK, kind: KeywordKind.EXPRESSION, literal: 'break' },
     [KeywordType.CONTINUE]: { type: KeywordType.CONTINUE, kind: KeywordKind.EXPRESSION, literal: 'continue' },
+    [KeywordType.RETURN]: { type: KeywordType.RETURN, kind: KeywordKind.CONTROL, literal: 'return' },
 
     [KeywordType.VIRTUAL]: { type: KeywordType.VIRTUAL, kind: KeywordKind.MODIFIER, literal: 'virtual' },
     [KeywordType.STATIC]: { type: KeywordType.STATIC, kind: KeywordKind.MODIFIER, literal: 'static' },

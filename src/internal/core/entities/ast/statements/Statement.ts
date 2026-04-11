@@ -6,7 +6,17 @@ import WhileStatement from './statements/WhileStatement';
 import ForStatement from './statements/ForStatement';
 import ExpressionStatement from './statements/ExpressionStatement';
 import DoWhileStatement from './statements/DoWhileStatement';
+import ReturnStatement from './statements/ReturnStatement';
 
-type Statement = DeclarationStatement | BlockStatement | DeleteStatement | IfStatement | WhileStatement | DoWhileStatement | ForStatement | ExpressionStatement;
+type Statement =
+    | DeclarationStatement
+    | BlockStatement
+    | DeleteStatement
+    | IfStatement
+    | WhileStatement
+    | DoWhileStatement
+    | ForStatement
+    | ExpressionStatement
+    | ReturnStatement;
 
 export default Statement;
