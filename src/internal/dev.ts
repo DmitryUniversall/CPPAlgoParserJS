@@ -75,6 +75,26 @@ function main() {
                 
                 int i = 0;
         };
+        
+        class NetworkDevice {
+        public:
+            NetworkDevice(int s);
+        
+            void setSpeed(int s);
+        
+            int getSpeed() const;
+        
+        private:
+            int speed;
+        };
+                
+        string NetworkStorage::getName() const {
+            return name;
+        }
+        
+        void NetworkStorage::print() const {
+            cout << name << " " << getSpeed() << " " << getCapacity() << endl;
+        }
     `;
 
     const lexer = new Lexer(input);

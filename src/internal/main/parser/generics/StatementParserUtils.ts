@@ -12,6 +12,7 @@ import TypedConstructKind from '../entities/TypedConstructKind';
 import { createUnexpectedTokenErrorMessage } from '../../utils/errors';
 import QualifiedName from '../../../core/entities/qualified_name/QualifiedName';
 import CallablePrefixModifierType from '../../../core/entities/ast/constructions/callable/modifiers/CallablePrefixModifierType';
+import CallablePostfixModifierType from '../../../core/entities/ast/constructions/callable/modifiers/CallablePostfixModifierType';
 
 export default class StatementParserUtils extends TokenParser {
     protected parseTypeExpression(): TypeExpression {
@@ -105,7 +106,11 @@ export default class StatementParserUtils extends TokenParser {
             if (!afterParen) return { kind: TypedConstructKind.NONE };
 
             // Type x(args) { ... }
-            if (afterParen.tokenType === TokenType.L_BRACE) return { kind: TypedConstructKind.FUNCTION_DEFINITION };
+            if (
+                afterParen.tokenType === TokenType.L_BRACE ||
+                CallablePostfixModifierType[afterParen.text.toUpperCase() as keyof typeof CallablePostfixModifierType] !== undefined
+            )
+                return { kind: TypedConstructKind.FUNCTION_DEFINITION };
 
             // Type x(args);
             return { kind: TypedConstructKind.VARIABLE_DECLARATION };

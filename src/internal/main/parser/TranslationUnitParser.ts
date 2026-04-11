@@ -15,12 +15,12 @@ import TopLevelClassDeclaration from '../../core/entities/ast/top_level/declarat
 import ConstructionParserUtils from './generics/ConstructionParserUtils';
 import FunctionParser from './constructions/FunctionParser';
 import ClassParser from './constructions/classes/ClassParser';
-import CallableDeclaration from '../../core/entities/ast/constructions/callable/CallableDeclaration';
+import FunctionDeclaration from '../../core/entities/ast/constructions/functions/FunctionDeclaration';
 
 export default class TranslationUnitParser extends ConstructionParserUtils {
-    private parseFunctionDeclaration(): CallableDeclaration {
+    private parseFunctionDeclaration(): FunctionDeclaration {
         const parser = new FunctionParser(this.source, this.tokens, this.position);
-        const result: CallableDeclaration = parser.parseFunctionDeclaration();
+        const result: FunctionDeclaration = parser.parseFunctionDeclaration();
         this.position = parser.currentPosition;
         return result;
     }
@@ -33,7 +33,7 @@ export default class TranslationUnitParser extends ConstructionParserUtils {
     }
 
     private parseTopLevelFunctionDefinition(): TopLevelFunctionDefinition {
-        const declaration: CallableDeclaration = this.parseFunctionDeclaration();
+        const declaration: FunctionDeclaration = this.parseFunctionDeclaration();
 
         return {
             nodeType: ASTNodeType.TOP_LEVEL_DECLARATION,
@@ -75,7 +75,7 @@ export default class TranslationUnitParser extends ConstructionParserUtils {
             case TypedConstructKind.NONE:
                 throw Error('Expected top level declaration');
             default:
-                throw Error(`Unsupported typed construct kind: '${TypedConstructKind}'`);
+                throw Error(`Unsupported typed construct kind: '${lookAheadResult.kind}'`);
         }
     }
 
