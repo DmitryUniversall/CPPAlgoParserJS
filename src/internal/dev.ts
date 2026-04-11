@@ -2,10 +2,13 @@ import Lexer from './main/parser/Lexer';
 import Token from './core/entities/token/Token';
 import TranslationUnitParser from './main/parser/TranslationUnitParser';
 import TranslationUnit from './core/entities/ast/translation_unit/TranslationUnit';
+import Description from './main/generator/avrora/entities/description/Description';
+import AvroraTranslationUnitGenerator from './main/generator/avrora/AvroraTranslationUnitGenerator';
 
 function main() {
     // noinspection CheckDtdRefs
     const input = `
+
 class Sensor {
 private:
     int valuePrivate;
@@ -92,7 +95,6 @@ int main() {
         smartSensor.SmartSensor::print();
     }
 
-    return 0;
 }
     `;
 
@@ -103,9 +105,9 @@ int main() {
     const translationUnit: TranslationUnit = translationUnitParser.parseTranslationUnit();
     console.log(translationUnit);
 
-    // const translationUnitGenerator = new AvroraTranslationUnitGenerator(input, translationUnit);
-    // const descriptions: ObjectDescription[] = translationUnitGenerator.generateDescriptionsForTranslationUnit();
-    // console.log(descriptions);
+    const translationUnitGenerator = new AvroraTranslationUnitGenerator(input, translationUnit);
+    const descriptions: Description[] = translationUnitGenerator.generateDescriptionsForTranslationUnit();
+    console.log(descriptions);
 
     // const parser = new Parser(input, tokens, 0);
     // const statements: Statement[] = parser.parseAlgorithm();

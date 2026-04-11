@@ -2,7 +2,7 @@ import TranslationUnit from '../../core/entities/ast/translation_unit/Translatio
 import TopLevelDeclaration from '../../core/entities/ast/top_level/TopLevelDeclaration';
 import ASTNodeType from '../../core/entities/ast/ASTNodeType';
 import TokenType from '../../core/entities/token/TokenType';
-import TopLevelFunctionDefinition from '../../core/entities/ast/top_level/declarations/TopLevelFunctionDefinition';
+import TopLevelFunctionDeclaration from '../../core/entities/ast/top_level/declarations/TopLevelFunctionDeclaration';
 import TopLevelDeclarationStatement from '../../core/entities/ast/top_level/declarations/TopLevelDeclarationStatement';
 import TypedConstructLookAheadResult from './entities/TypedConstructLookAheadResult';
 import TypedConstructKind from './entities/TypedConstructKind';
@@ -32,7 +32,7 @@ export default class TranslationUnitParser extends ConstructionParserUtils {
         return result;
     }
 
-    private parseTopLevelFunctionDefinition(): TopLevelFunctionDefinition {
+    private parseTopLevelFunctionDefinition(): TopLevelFunctionDeclaration {
         const declaration: FunctionDeclaration = this.parseFunctionDeclaration();
 
         return {

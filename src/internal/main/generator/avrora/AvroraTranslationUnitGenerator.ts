@@ -1,14 +1,17 @@
-import TopLevelFunctionDefinition from '../../../core/entities/ast/top_level/declarations/TopLevelFunctionDefinition';
-import ObjectDescription from './entities/description/ObjectDescription';
-import FunctionDefinitionDescription from './entities/description/descriptions/FunctionDefinitionDescription';
+import TopLevelFunctionDeclaration from '../../../core/entities/ast/top_level/declarations/TopLevelFunctionDeclaration';
+import Description from './entities/description/Description';
+import FunctionDescription from './entities/description/descriptions/FunctionDescription';
 import Statement from '../../../core/entities/ast/statements/Statement';
 import AvroraRow from './entities/AvroraRow';
 import AvroraGenerator from './AvroraGenerator';
 import TranslationUnit from '../../../core/entities/ast/translation_unit/TranslationUnit';
 import TopLevelDeclaration from '../../../core/entities/ast/top_level/TopLevelDeclaration';
 import TopLevelDeclarationType from '../../../core/entities/ast/top_level/TopLevelDeclarationType';
-import ObjectDescriptionType from './entities/description/ObjectDescriptionType';
+import DescriptionType from './entities/description/DescriptionType';
 import { generateAvroraTypeExpressionString } from './utils/generate';
+import CallableDefinition from '../../../core/entities/ast/constructions/callable/definitions/CallableDefinition';
+import CallableDefinitionType from '../../../core/entities/ast/constructions/callable/definitions/CallableDefinitionType';
+import FunctionDeclaration from '../../../core/entities/ast/constructions/functions/FunctionDeclaration';
 
 export default class AvroraTranslationUnitGenerator {
     private readonly source: string;
@@ -24,26 +27,32 @@ export default class AvroraTranslationUnitGenerator {
         return generator.generateRowsForAlgorithm();
     }
 
-    private generateDescriptionForFunctionDefinition(topLevelDefinition: TopLevelFunctionDefinition): FunctionDefinitionDescription {
-        const definition = topLevelDefinition.definition;
+    private generateFunctionDescription(topLevelDeclaration: TopLevelFunctionDeclaration): FunctionDescription {
+        const declaration: FunctionDeclaration = topLevelDeclaration.declaration;
+
+        const returnType: string = generateAvroraTypeExpressionString(declaration.returnType) + " - ОПИСАНИЕ";
+        const name: string = declaration.name.scope.join('::') + declaration.name.name;
+        const params: string = declaration.params.flatMap((it) => `${generateAvroraTypeExpressionString(it.type)} ${it.name} - ОПИСАНИЕ`).join('; ');
+
+        const definition: CallableDefinition | null = topLevelDeclaration.declaration?.definition;
 
         return {
-            type: ObjectDescriptionType.FUNCTION_DEFINITION,
-            returnType: generateAvroraTypeExpressionString(definition.returnType),
-            name: definition.name.name,
-            params: definition.params.flatMap((it) => `${generateAvroraTypeExpressionString(it.type)} ${it.name} - ОПИСАНИЕ`).join('; '),
-            body: this.generateStatementRows(definition.body.body),
+            type: DescriptionType.FUNCTION_DECLARATION,
+            returnType: returnType,
+            name: name,
+            params: params,
+            body: definition?.type === CallableDefinitionType.BODY ? this.generateStatementRows(definition.body.body) : [],
         };
     }
 
-    private generateDescriptionForTopLevelDeclaration(declaration: TopLevelDeclaration): ObjectDescription {
-        if (declaration.type === TopLevelDeclarationType.FUNCTION_DECLARATION) return this.generateDescriptionForFunctionDefinition(declaration);
+    private generateDescriptionForTopLevelDeclaration(declaration: TopLevelDeclaration): Description {
+        if (declaration.type === TopLevelDeclarationType.FUNCTION_DECLARATION) return this.generateFunctionDescription(declaration);
 
         throw new Error(`Unsupported top level declaration type: '${declaration.type}'`);
     }
 
-    public generateDescriptionsForTranslationUnit(): ObjectDescription[] {
-        const descriptions: ObjectDescription[] = [];
+    public generateDescriptionsForTranslationUnit(): Description[] {
+        const descriptions: Description[] = [];
         for (const declaration of this.translationUnit.declarations) descriptions.push(this.generateDescriptionForTopLevelDeclaration(declaration));
         return descriptions;
     }
