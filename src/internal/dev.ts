@@ -6,95 +6,94 @@ import TranslationUnit from './core/entities/ast/translation_unit/TranslationUni
 function main() {
     // noinspection CheckDtdRefs
     const input = `
-        inline static int testFunc(int a, int b) const noexcept {
-            while (i < 10) {
-                cout << "Test" << endl;
-                cout << 'Test' << endl;
-                
-                if (test > 0) {
-                    cout << "Test2" << endl;
-                    break;
-                }
-                
-                continue;
-            }
-            
-            cout << "Initial state" << endl;
-            int n;
-            cin >> n;
-            
-            n += 1;
-            n -= 1;
-            object.n += 1;
-            object.n -= 1;
-        }
-        
-        class TestFirst;
-        
-        class TestSecond : public Base, private Base2<Test2> {
-            private:
-                class Builder {
-                    int i = 0;
-                };
-                
-                int testFunc(int a, int b) {
-                    while (i < 10) {
-                        cout << "Test" << endl;
-                        cout << 'Test' << endl;
-                        
-                        if (test > 0) {
-                            cout << "Test2" << endl;
-                            break;
-                        }
-                        
-                        continue;
-                    }
-                    
-                    cout << "Initial state" << endl;
-                    int n;
-                    cin >> n;
-                    
-                    n += 1;
-                    n -= 1;
-                    object.n += 1;
-                    object.n -= 1;
-                }
-            
-            public:
-                virtual TestSecond(vector<int> array) noexcept : Base<T>(333), i{10}, b(123, 321) {
-                    int x = 10;
-                }
-                
-                TestSecond(vector<int> array) : i(10) {}
+class Sensor {
+private:
+    int valuePrivate;
 
-                TestSecond(vector<int> array);
-                
-                TestSecond(vector<int> array) {
-                    int x = 123;
-                }
-                
-                int i = 0;
-        };
-        
-        class NetworkDevice {
-        public:
-            NetworkDevice(int s);
-        
-            void setSpeed(int s);
-        
-            int getSpeed() const;
-        
-        private:
-            int speed;
-        };
-                
-        string NetworkStorage::getName() const {
-            return name;
-        }
-        
-        void NetworkStorage::print() const {
-            cout << name << " " << getSpeed() << " " << getCapacity() << endl;
-        }
+    void setValuePrivate(int number) {
+        valuePrivate = number * 3;
+    }
+
+public:
+    int valuePublic;
+
+    Sensor(int privateValue, int publicValue) {
+        setValuePrivate(privateValue);
+        valuePublic = publicValue;
+    }
+
+    void setValues(int privateValue, int publicValue) {
+        setValuePrivate(privateValue);
+        valuePublic = publicValue;
+    }
+
+    void print() const {
+        std::cout << "Sensor: " << valuePrivate << ' ' << valuePublic << '\\n';
+    }
+};
+
+class SmartSensor : public Sensor {
+private:
+    int valuePrivate;
+
+public:
+    int valuePublic;
+
+    SmartSensor(int privateValue, int publicValue)
+        : Sensor(privateValue, publicValue),
+          valuePrivate(privateValue),
+          valuePublic(publicValue) {
+    }
+
+    void setValues(int privateValue, int publicValue) {
+        valuePrivate = privateValue;
+        valuePublic = publicValue;
+    }
+
+    void print() const {
+        std::cout << "SmartSensor: " << valuePrivate << ' ' << valuePublic << '\\n';
+    }
+};
+
+int main() {
+    int firstValue;
+    int secondValue;
+    std::cin >> firstValue >> secondValue;
+
+    SmartSensor smartSensor(firstValue, secondValue);
+
+    smartSensor.Sensor::print();
+    smartSensor.SmartSensor::print();
+
+    int number;
+    std::cin >> number;
+
+    smartSensor.SmartSensor::valuePublic = number;
+    smartSensor.Sensor::valuePublic = number;
+
+    smartSensor.SmartSensor::print();
+    smartSensor.Sensor::print();
+
+    int a;
+    int b;
+    std::cin >> a >> b;
+
+    if (a > 0) {
+        smartSensor.SmartSensor::setValues(a + 1, b + 1);
+        smartSensor.Sensor::setValues(a - 1, b - 1);
+
+        smartSensor.SmartSensor::print();
+        smartSensor.Sensor::print();
+    } else {
+        smartSensor.Sensor::setValues(a + 1, b + 1);
+        smartSensor.SmartSensor::setValues(a - 1, b - 1);
+
+        smartSensor.Sensor::print();
+        smartSensor.SmartSensor::print();
+    }
+
+    return 0;
+}
     `;
 
     const lexer = new Lexer(input);

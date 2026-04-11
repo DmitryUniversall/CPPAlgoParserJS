@@ -1,4 +1,3 @@
-import TokenParser from '../../../core/parser/TokenParser';
 import Token from '../../../core/entities/token/Token';
 import TypeExpression from '../../../core/entities/ast/type/TypeExpression';
 import TypeParser from '../TypeParser';
@@ -10,11 +9,11 @@ import TypeLookAheadResult from '../entities/TypeLookAheadResult';
 import TypedConstructLookAheadResult from '../entities/TypedConstructLookAheadResult';
 import TypedConstructKind from '../entities/TypedConstructKind';
 import { createUnexpectedTokenErrorMessage } from '../../utils/errors';
-import QualifiedName from '../../../core/entities/qualified_name/QualifiedName';
 import CallablePrefixModifierType from '../../../core/entities/ast/constructions/callable/modifiers/CallablePrefixModifierType';
 import CallablePostfixModifierType from '../../../core/entities/ast/constructions/callable/modifiers/CallablePostfixModifierType';
+import GenericTokenParser from './GenericTokenParser';
 
-export default class StatementParserUtils extends TokenParser {
+export default class StatementParserUtils extends GenericTokenParser {
     protected parseTypeExpression(): TypeExpression {
         const parser = new TypeParser(this.source, this.tokens, this.position);
         const result: TypeExpression = parser.parseTypeExpression();
@@ -44,25 +43,6 @@ export default class StatementParserUtils extends TokenParser {
             typeExpression: typeExpression,
             endPosition: parser.currentPosition,
         };
-    }
-
-    protected skipBalancedParens(leftParenPosition: number): number {
-        let depth: number = 0;
-        let pointer: number = leftParenPosition;
-
-        while (pointer < this.tokens.length) {
-            const token = this.tokens[pointer];
-
-            if (token.tokenType === TokenType.L_PAREN) depth++;
-            if (token.tokenType === TokenType.R_PAREN) {
-                depth--;
-                if (depth === 0) return pointer + 1;
-            }
-
-            pointer++;
-        }
-
-        throw new Error('Unclosed parenthesis');
     }
 
     protected lookAheadTypedConstruct(): TypedConstructLookAheadResult {
@@ -126,21 +106,5 @@ export default class StatementParserUtils extends TokenParser {
         }
 
         return { kind: TypedConstructKind.NONE };
-    }
-
-    protected parseQualifiedName(): QualifiedName {
-        const nameParts: string[] = [];
-        nameParts.push(this.expectNextToken(TokenType.IDENTIFIER).text);
-
-        while (this.peek()?.text === operators.namespaceAccess.literal) {
-            this.expectNextToken(TokenType.OPERATOR, operators.namespaceAccess.literal);
-            const part: Token = this.expectNextToken(TokenType.IDENTIFIER);
-            nameParts.push(part.text);
-        }
-
-        return {
-            name: nameParts[nameParts.length - 1],
-            scope: nameParts.slice(0, nameParts.length - 1),
-        };
     }
 }

@@ -1,7 +1,6 @@
 import Token from '../../core/entities/token/Token';
 import TokenType from '../../core/entities/token/TokenType';
 import { operators } from '../../core/entities/operator/operators/operators';
-import TokenParser from '../../core/parser/TokenParser';
 import OperatorType from '../../core/entities/operator/OperatorType';
 import TypeExpressionType from '../../core/entities/ast/type/TypeExpressionType';
 import ASTNodeType from '../../core/entities/ast/ASTNodeType';
@@ -10,8 +9,10 @@ import { prefixTypeModifierLiteralsMap } from '../../core/entities/modifier/type
 import { postfixTypeModifierLiteralsMap } from '../../core/entities/modifier/type/postfix/postfix_modifiers';
 import PostfixTypeModifier from '../../core/entities/modifier/type/postfix/modifiers/PostfixTypeModifier';
 import PrefixTypeModifier from '../../core/entities/modifier/type/prefix/modifiers/PrefixTypeModifier';
+import GenericTokenParser from './generics/GenericTokenParser';
+import QualifiedName from '../../core/entities/qualified_name/QualifiedName';
 
-export default class TypeParser extends TokenParser {
+export default class TypeParser extends GenericTokenParser {
     private isPostfixTypeModifier(token: Token | null): boolean {
         if (!token) return false;
         return postfixTypeModifierLiteralsMap[token.text] !== undefined;
@@ -43,7 +44,7 @@ export default class TypeParser extends TokenParser {
         const prefixModifiers: PrefixTypeModifier[] = [];
         while (this.isPrefixTypeModifier(this.peek())) prefixModifiers.push(prefixTypeModifierLiteralsMap[this.nextOrThrow().text]); // TODO: Search 2 times; Refactor
 
-        let typeToken = this.expectNextToken(TokenType.IDENTIFIER);
+        let typeName: QualifiedName = this.parseQualifiedName();
 
         // A<...>
         let typeParameters: TypeExpression[] = [];
@@ -56,7 +57,7 @@ export default class TypeParser extends TokenParser {
         return {
             nodeType: ASTNodeType.TYPE,
             type: TypeExpressionType.TYPE,
-            typeName: typeToken.text,
+            typeName: typeName,
             prefixModifiers: prefixModifiers,
             typeParameters: typeParameters,
             postfixModifiers: postfixModifiers,
