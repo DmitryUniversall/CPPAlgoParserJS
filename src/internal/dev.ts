@@ -94,8 +94,9 @@ int main() {
         smartSensor.Sensor::print();
         smartSensor.SmartSensor::print();
     }
-
 }
+    class Test;
+
     `;
 
     const lexer = new Lexer(input);
