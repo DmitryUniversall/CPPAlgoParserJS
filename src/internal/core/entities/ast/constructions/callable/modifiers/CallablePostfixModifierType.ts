@@ -1,8 +1,8 @@
-enum FunctionPostfixModifierType {
+enum CallablePostfixModifierType {
     // TODO: & and &&
     CONST = 'CONST',
     VOLATILE = 'VOLATILE',
     NOEXCEPT = 'NOEXCEPT',
 }
 
-export default FunctionPostfixModifierType;
+export default CallablePostfixModifierType;

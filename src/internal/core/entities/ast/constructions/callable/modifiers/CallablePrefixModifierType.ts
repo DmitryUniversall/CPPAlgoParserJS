@@ -1,4 +1,4 @@
-enum FunctionPrefixModifierType {
+enum CallablePrefixModifierType {
     VIRTUAL = 'VIRTUAL',
     STATIC = 'STATIC',
     INLINE = 'INLINE',
@@ -8,4 +8,4 @@ enum FunctionPrefixModifierType {
     FRIEND = 'FRIEND',
 }
 
-export default FunctionPrefixModifierType;
+export default CallablePrefixModifierType;

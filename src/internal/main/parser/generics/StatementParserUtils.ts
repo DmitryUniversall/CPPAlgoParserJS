@@ -11,7 +11,7 @@ import TypedConstructLookAheadResult from '../entities/TypedConstructLookAheadRe
 import TypedConstructKind from '../entities/TypedConstructKind';
 import { createUnexpectedTokenErrorMessage } from '../../utils/errors';
 import QualifiedName from '../../../core/entities/qualified_name/QualifiedName';
-import FunctionPrefixModifierType from '../../../core/entities/ast/constructions/functions/modifiers/FunctionPrefixModifierType';
+import CallablePrefixModifierType from '../../../core/entities/ast/constructions/callable/modifiers/CallablePrefixModifierType';
 
 export default class StatementParserUtils extends TokenParser {
     protected parseTypeExpression(): TypeExpression {
@@ -69,7 +69,7 @@ export default class StatementParserUtils extends TokenParser {
 
         if (
             this.peek()?.tokenType === TokenType.KEYWORD &&
-            FunctionPrefixModifierType[this.peek()?.text?.toUpperCase() as keyof typeof FunctionPrefixModifierType] !== undefined
+            CallablePrefixModifierType[this.peek()?.text?.toUpperCase() as keyof typeof CallablePrefixModifierType] !== undefined
         )
             return { kind: TypedConstructKind.FUNCTION_DEFINITION };
 

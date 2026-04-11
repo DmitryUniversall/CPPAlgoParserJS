@@ -1,15 +1,17 @@
-import FunctionParameter from './params/FunctionParameter';
 import QualifiedName from '../../../qualified_name/QualifiedName';
 import TypeExpression from '../../type/TypeExpression';
-import BaseFunctionDefinition from './BaseFunctionDefinition';
-import FunctionPostfixModifierType from './modifiers/FunctionPostfixModifierType';
-import FunctionPrefixModifierType from './modifiers/FunctionPrefixModifierType';
+import CallableParameter from '../callable/params/CallableParameter';
+import CallablePrefixModifierType from '../callable/modifiers/CallablePrefixModifierType';
+import CallablePostfixModifierType from '../callable/modifiers/CallablePostfixModifierType';
+import CallableDefinition from '../callable/definitions/CallableDefinition';
+import ASTNodeType from '../../ASTNodeType';
 
 export default interface FunctionDeclaration {
+    nodeType: ASTNodeType.DECLARATION;
     name: QualifiedName;
     returnType: TypeExpression;
-    params: FunctionParameter[];
-    prefixModifiers: FunctionPrefixModifierType[];
-    postfixModifiers: FunctionPostfixModifierType[];
-    definition: BaseFunctionDefinition | null;
+    params: CallableParameter[];
+    prefixModifiers: CallablePrefixModifierType[];
+    postfixModifiers: CallablePostfixModifierType[];
+    definition: CallableDefinition | null;
 }

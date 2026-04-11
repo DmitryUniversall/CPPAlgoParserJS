@@ -1,41 +1,62 @@
-import ConstructionParserUtils from '../generics/ConstructionParserUtils';
-import Token from '../../../core/entities/token/Token';
-import ClassMemberLookAheadResult from '../entities/ClassMemberLookAheadResult';
-import ClassMemberLookAheadKind from '../entities/ClassMemberLookAheadKind';
-import TokenType from '../../../core/entities/token/TokenType';
-import { keywords } from '../../../core/entities/keyword/keywords/keywords';
-import ClassMember from '../../../core/entities/ast/constructions/classes/members/ClassMember';
-import TypeExpression from '../../../core/entities/ast/type/TypeExpression';
-import { operators } from '../../../core/entities/operator/operators/operators';
-import OperatorType from '../../../core/entities/operator/OperatorType';
-import ClassDeclaration from '../../../core/entities/ast/constructions/classes/ClassDeclaration';
-import StatementType from '../../../core/entities/ast/statements/StatementType';
-import ClassMemberType from '../../../core/entities/ast/constructions/classes/members/ClassMemberType';
-import AccessModifierType from '../../../core/entities/modifier/access/AccessModifierType';
-import FunctionParser from './FunctionParser';
-import FunctionParameter from '../../../core/entities/ast/constructions/functions/params/FunctionParameter';
-import Statement from '../../../core/entities/ast/statements/Statement';
-import NestedClassClassMember from '../../../core/entities/ast/constructions/classes/members/members/NestedClassClassMember';
-import ClassInheritance from '../../../core/entities/ast/constructions/classes/inheritance/ClassInheritance';
-import ClassDefinition from '../../../core/entities/ast/constructions/classes/ClassDefinition';
-import ClassName from '../../../core/entities/ast/constructions/classes/ClassName';
-import InheritanceBaseClass from '../../../core/entities/ast/constructions/classes/inheritance/InheritanceBaseClass';
-import FunctionDeclaration from '../../../core/entities/ast/constructions/functions/FunctionDeclaration';
-import FunctionPrefixModifierType from '../../../core/entities/ast/constructions/functions/modifiers/FunctionPrefixModifierType';
+import ConstructionParserUtils from '../../generics/ConstructionParserUtils';
+import Token from '../../../../core/entities/token/Token';
+import ClassMemberLookAheadResult from '../../entities/ClassMemberLookAheadResult';
+import ClassMemberLookAheadKind from '../../entities/ClassMemberLookAheadKind';
+import TokenType from '../../../../core/entities/token/TokenType';
+import { keywords } from '../../../../core/entities/keyword/keywords/keywords';
+import ClassMember from '../../../../core/entities/ast/constructions/classes/members/ClassMember';
+import TypeExpression from '../../../../core/entities/ast/type/TypeExpression';
+import { operators } from '../../../../core/entities/operator/operators/operators';
+import OperatorType from '../../../../core/entities/operator/OperatorType';
+import ClassDeclaration from '../../../../core/entities/ast/constructions/classes/ClassDeclaration';
+import StatementType from '../../../../core/entities/ast/statements/StatementType';
+import ClassMemberType from '../../../../core/entities/ast/constructions/classes/members/ClassMemberType';
+import AccessModifierType from '../../../../core/entities/modifier/access/AccessModifierType';
+import Statement from '../../../../core/entities/ast/statements/Statement';
+import NestedClassClassMember from '../../../../core/entities/ast/constructions/classes/members/members/NestedClassClassMember';
+import ClassInheritance from '../../../../core/entities/ast/constructions/classes/inheritance/ClassInheritance';
+import ClassDefinition from '../../../../core/entities/ast/constructions/classes/ClassDefinition';
+import ClassName from '../../../../core/entities/ast/constructions/classes/ClassName';
+import InheritanceBaseClass from '../../../../core/entities/ast/constructions/classes/inheritance/InheritanceBaseClass';
+import MethodParser from './MethodParser';
+import MethodDeclaration from '../../../../core/entities/ast/constructions/classes/methods/MethodDeclaration';
+import ASTNodeType from '../../../../core/entities/ast/ASTNodeType';
+import ConstructorParser from './ConstructorParser';
+import ConstructorDeclaration from '../../../../core/entities/ast/constructions/classes/constructors/ConstructorDeclaration';
+import QualifiedName from '../../../../core/entities/qualified_name/QualifiedName';
+import { CallableParser } from '../CallableParser';
+import CallablePrefixModifierType from '../../../../core/entities/ast/constructions/callable/modifiers/CallablePrefixModifierType';
 
 export default class ClassParser extends ConstructionParserUtils {
-    private parseFunctionDeclaration(): FunctionDeclaration {
-        const parser = new FunctionParser(this.source, this.tokens, this.position);
-        const result: FunctionDeclaration = parser.parseFunctionDeclaration();
+    private parseMethodDeclaration(accessModifier: AccessModifierType): MethodDeclaration {
+        const parser = new MethodParser(this.source, this.tokens, this.position);
+        const result: MethodDeclaration = parser.parseMethodDeclaration(accessModifier);
+        this.position = parser.currentPosition;
+        return result;
+    }
+
+    private skipCallablePrefixModifiers(): void {
+        const parser = new CallableParser(this.source, this.tokens, this.position);
+        parser.parseCallablePrefixModifiers();
+        this.position = parser.currentPosition;
+    }
+
+    private parseConstructorDeclaration(
+        accessModifier: AccessModifierType,
+        className: ClassName,
+        inheritance: ClassInheritance | null,
+    ): ConstructorDeclaration {
+        const parser = new ConstructorParser(this.source, this.tokens, this.position);
+        const result: ConstructorDeclaration = parser.parseConstructorDeclaration(accessModifier, className, inheritance);
         this.position = parser.currentPosition;
         return result;
     }
 
     private parseClassName(): ClassName {
-        const classNameString: string = this.expectNextToken(TokenType.IDENTIFIER).text;
+        const classNameString: QualifiedName = this.parseQualifiedName();
 
         let genericParams: TypeExpression[] = [];
-        if (this.peek()?.text === operators[OperatorType.LT].literal) genericParams = this.parseTypeParameters();
+        if (this.peek()?.text === operators.lt.literal) genericParams = this.parseTypeParameters();
 
         return {
             name: classNameString,
@@ -43,7 +64,7 @@ export default class ClassParser extends ConstructionParserUtils {
         };
     }
 
-    private lookAheadForClassMember(className: string): ClassMemberLookAheadResult {
+    private lookAheadForClassMember(className: ClassName): ClassMemberLookAheadResult {
         let current: Token | null = this.peekOffset(0);
         if (current === null) return { kind: ClassMemberLookAheadKind.NONE };
 
@@ -57,11 +78,14 @@ export default class ClassParser extends ConstructionParserUtils {
             return { kind: ClassMemberLookAheadKind.ACCESS_MODIFIER };
         }
 
-        if (current.tokenType === TokenType.IDENTIFIER && current.text === className && this.peekOffset(1)?.tokenType === TokenType.L_PAREN)
-            return { kind: ClassMemberLookAheadKind.CONSTRUCTOR };
+        if (CallablePrefixModifierType[current.text.toUpperCase() as keyof typeof CallablePrefixModifierType] !== undefined) {
+            this.skipCallablePrefixModifiers();
+            current = this.peekOffset(0);
+            if (current === null) return { kind: ClassMemberLookAheadKind.NONE };
+        }
 
-        if (FunctionPrefixModifierType[current.text.toUpperCase() as keyof typeof FunctionPrefixModifierType] !== undefined)
-            return { kind: ClassMemberLookAheadKind.METHOD };
+        if (current.tokenType === TokenType.IDENTIFIER && current.text === className.name.name && this.peekOffset(1)?.tokenType === TokenType.L_PAREN)
+            return { kind: ClassMemberLookAheadKind.CONSTRUCTOR };
 
         let pointer: number = this.position;
 
@@ -85,10 +109,11 @@ export default class ClassParser extends ConstructionParserUtils {
     }
 
     private parseField(accessModifier: AccessModifierType): ClassMember {
-        const statement = this.parseStatement();
+        const statement: Statement = this.parseStatement();
         if (statement.type !== StatementType.DECLARATION_STATEMENT) throw Error('Declaration statement expected as field declaration');
 
         return {
+            nodeType: ASTNodeType.DECLARATION,
             type: ClassMemberType.FIELD,
             accessModifier: accessModifier,
             statement: statement,
@@ -96,31 +121,24 @@ export default class ClassParser extends ConstructionParserUtils {
     }
 
     private parseMethod(accessModifier: AccessModifierType): ClassMember {
-        const functionDeclaration: FunctionDeclaration = this.parseFunctionDeclaration();
+        const methodDeclaration: MethodDeclaration = this.parseMethodDeclaration(accessModifier);
 
         return {
+            nodeType: ASTNodeType.DECLARATION,
             type: ClassMemberType.METHOD,
             accessModifier: accessModifier,
-            functionDeclaration: functionDeclaration,
+            methodDeclaration: methodDeclaration,
         };
     }
 
-    private parseConstructor(accessModifier: AccessModifierType): ClassMember {
-        const name: string = this.expectNextToken(TokenType.IDENTIFIER).text;
-
-        const parser = new FunctionParser(this.source, this.tokens, this.position);
-        const params: FunctionParameter[] = parser.parseParameterList();
-        this.position = parser.currentPosition;
-
-        const body: Statement = this.parseStatement();
-        if (body.type !== StatementType.BLOCK_STATEMENT) throw Error('Expected block statement after constructor declaration');
+    private parseConstructor(accessModifier: AccessModifierType, className: ClassName, inheritance: ClassInheritance | null): ClassMember {
+        const constructorDeclaration: ConstructorDeclaration = this.parseConstructorDeclaration(accessModifier, className, inheritance);
 
         return {
+            nodeType: ASTNodeType.DECLARATION,
             type: ClassMemberType.CONSTRUCTOR,
             accessModifier: accessModifier,
-            className: name,
-            params: params,
-            body: body,
+            constructorDeclaration: constructorDeclaration,
         };
     }
 
@@ -128,13 +146,14 @@ export default class ClassParser extends ConstructionParserUtils {
         const classDefinition: ClassDeclaration = this.parseClassDeclaration();
 
         return {
+            nodeType: ASTNodeType.DECLARATION,
             type: ClassMemberType.NESTED_CLASS,
             accessModifier: accessModifier,
             classDefinition: classDefinition,
         };
     }
 
-    private parseClassMembers(className: string): ClassMember[] {
+    private parseMembers(className: ClassName, inheritance: ClassInheritance | null): ClassMember[] {
         const members: ClassMember[] = [];
 
         let currentAccessModifier: AccessModifierType = AccessModifierType.public;
@@ -151,7 +170,7 @@ export default class ClassParser extends ConstructionParserUtils {
                     members.push(this.parseMethod(currentAccessModifier));
                     break;
                 case ClassMemberLookAheadKind.CONSTRUCTOR:
-                    members.push(this.parseConstructor(currentAccessModifier));
+                    members.push(this.parseConstructor(currentAccessModifier, className, inheritance));
                     break;
                 case ClassMemberLookAheadKind.NESTED_CLASS:
                     members.push(this.parseNestedClass(currentAccessModifier));
@@ -168,7 +187,7 @@ export default class ClassParser extends ConstructionParserUtils {
         return members;
     }
 
-    private parseClassInheritance(): ClassInheritance {
+    private parseInheritance(): ClassInheritance {
         this.expectNextToken(TokenType.COLON);
 
         let current: Token | null = this.peek();
@@ -201,13 +220,13 @@ export default class ClassParser extends ConstructionParserUtils {
 
     private parseClassDefinition(className: ClassName): ClassDefinition | null {
         let inheritance: ClassInheritance | null = null;
-        if (this.peek()?.tokenType === TokenType.COLON) inheritance = this.parseClassInheritance();
+        if (this.peek()?.tokenType === TokenType.COLON) inheritance = this.parseInheritance();
 
         if (inheritance === null && this.peek()?.tokenType === TokenType.SEMI) return null;
 
         this.expectNextToken(TokenType.L_BRACE);
 
-        const members: ClassMember[] | null = this.parseClassMembers(className.name);
+        const members: ClassMember[] | null = this.parseMembers(className, inheritance);
 
         this.expectNextToken(TokenType.R_BRACE);
 
@@ -226,6 +245,7 @@ export default class ClassParser extends ConstructionParserUtils {
         this.expectNextToken(TokenType.SEMI);
 
         return {
+            nodeType: ASTNodeType.DECLARATION,
             className: className,
             definition: definition,
         };

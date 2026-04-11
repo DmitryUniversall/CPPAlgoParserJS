@@ -14,13 +14,13 @@ import ClassDeclaration from '../../core/entities/ast/constructions/classes/Clas
 import TopLevelClassDeclaration from '../../core/entities/ast/top_level/declarations/TopLevelClassDeclaration';
 import ConstructionParserUtils from './generics/ConstructionParserUtils';
 import FunctionParser from './constructions/FunctionParser';
-import ClassParser from './constructions/ClassParser';
-import FunctionDeclaration from '../../core/entities/ast/constructions/functions/FunctionDeclaration';
+import ClassParser from './constructions/classes/ClassParser';
+import CallableDeclaration from '../../core/entities/ast/constructions/callable/CallableDeclaration';
 
 export default class TranslationUnitParser extends ConstructionParserUtils {
-    private parseFunctionDeclaration(): FunctionDeclaration {
+    private parseFunctionDeclaration(): CallableDeclaration {
         const parser = new FunctionParser(this.source, this.tokens, this.position);
-        const result: FunctionDeclaration = parser.parseFunctionDeclaration();
+        const result: CallableDeclaration = parser.parseFunctionDeclaration();
         this.position = parser.currentPosition;
         return result;
     }
@@ -33,7 +33,7 @@ export default class TranslationUnitParser extends ConstructionParserUtils {
     }
 
     private parseTopLevelFunctionDefinition(): TopLevelFunctionDefinition {
-        const declaration: FunctionDeclaration = this.parseFunctionDeclaration();
+        const declaration: CallableDeclaration = this.parseFunctionDeclaration();
 
         return {
             nodeType: ASTNodeType.TOP_LEVEL_DECLARATION,

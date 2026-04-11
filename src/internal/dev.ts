@@ -31,7 +31,7 @@ function main() {
         
         class TestFirst;
         
-        class TestSecond : public Base1, private Base2<Test2> {
+        class TestSecond : public Base, private Base2<Test2> {
             private:
                 class Builder {
                     int i = 0;
@@ -61,8 +61,16 @@ function main() {
                 }
             
             public:
-                TestSecond(vector<int> array) {
+                virtual TestSecond(vector<int> array) noexcept : Base<T>(333), i{10}, b(123, 321) {
                     int x = 10;
+                }
+                
+                TestSecond(vector<int> array) : i(10) {}
+
+                TestSecond(vector<int> array);
+                
+                TestSecond(vector<int> array) {
+                    int x = 123;
                 }
                 
                 int i = 0;
