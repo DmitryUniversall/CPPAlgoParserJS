@@ -3,6 +3,7 @@ import TypeExpression from '../../../../core/entities/ast/type/TypeExpression';
 import AvroraExpressionGenerator from '../AvroraExpressionGenerator';
 import AvroraTypeGenerator from '../AvroraTypeGenerator';
 
+// TODO: Refactor
 export function generateAvroraExpressionString(expression: Expression): string {
     const generator = new AvroraExpressionGenerator();
     return generator.generateExpressionString(expression);

@@ -21,6 +21,7 @@ import AvroraGeneratorJumpKind from './entities/internal/AvroraGeneratorJumpKind
 import KeywordType from '../../../core/entities/keyword/KeywordType';
 import { generateAvroraExpressionString, generateAvroraTypeExpressionString } from './utils/generate';
 import CreateRowSchema from './entities/internal/CreateRowSchema';
+import ReturnStatement from '../../../core/entities/ast/statements/statements/ReturnStatement';
 
 export default class AvroraGenerator extends ItemsProcessor<Statement> {
     private rowNumber: number;
@@ -66,11 +67,11 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
 
         const internalNumbers = new Set(rows.map((row) => row.number));
         for (const row of rows) {
-            if (!row.jumpKind && !internalNumbers.has(row.next)) row.next = target;
+            if (!row.jumpKind && !internalNumbers.has(row.next) && row.next !== 0) row.next = target;
 
             if (row.subrow) {
                 const subrow = row.subrow as GeneratedAvroraRow;
-                if (!subrow.jumpKind && !internalNumbers.has(subrow.next)) subrow.next = target;
+                if (!subrow.jumpKind && !internalNumbers.has(subrow.next) && subrow.next !== 0) subrow.next = target;
             }
         }
     }
@@ -253,12 +254,22 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
         return statement.body.flatMap((bodyStatement) => this.generateStatementRows(bodyStatement));
     }
 
+    private generateReturnStatementRow(statement: ReturnStatement): GeneratedAvroraRow {
+        return this.createRowWith({
+            number: ++this.rowNumber,
+            action: `Возврат: ${generateAvroraExpressionString(statement.returned)}`,
+            next: 0,
+        });
+    }
+
     private generateStatementRows(statement: Statement): GeneratedAvroraRow[] {
         switch (statement.type) {
             case StatementType.DELETE_STATEMENT:
                 return [this.generateDeleteStatementRow(statement)];
             case StatementType.EXPRESSION_STATEMENT:
                 return [this.generateExpressionStatementRow(statement)];
+            case StatementType.RETURN_STATEMENT:
+                return [this.generateReturnStatementRow(statement)];
             case StatementType.DECLARATION_STATEMENT:
                 return this.generateDeclarationStatementRows(statement);
             case StatementType.BLOCK_STATEMENT:
@@ -271,7 +282,6 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
                 return this.generateForStatementRows(statement);
             case StatementType.DO_WHILE_STATEMENT:
                 return this.generateDoWhileStatementRows(statement);
-
             default:
                 throw new Error(`Unexpected statement: '${(statement as BaseStatement).type}'`);
         }

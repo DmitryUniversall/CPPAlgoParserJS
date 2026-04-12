@@ -35,7 +35,7 @@ public:
     }
 };
 
-class Test : public BaseTest {
+class Test : public BaseTest, private BaseTest2 {
 private:
     int valuePrivate;
 
@@ -50,12 +50,18 @@ public:
     }
 
     void setValues(int privateValue, int publicValue) {
-        valuePrivate = privateValue;
-        valuePublic = publicValue;
+        if (x > 0) {
+            valuePrivate = privateValue;
+            valuePublic = publicValue;
+        }
     }
 
     void print() const {
-        std::cout << "Test: " << valuePrivate << ' ' << valuePublic << '\\n';
+        if (x > 0) {
+            std::cout << "Test: " << valuePrivate << ' ' << valuePublic << '\\n';
+        } {
+            std::cout << "Testttttttttttttttttttttttttttttttttt" << endl;
+        }
     }
 };
 
@@ -96,8 +102,66 @@ int main() {
         smartSensor.SmartSensor::print();
     }
 }
-    class Test;
 
+class Test;
+
+std::vector<int> calculateAdjustedAverage(
+    const ValueType* values,
+    int valuesCount,
+    ValueType multiplier,
+    ValueType offset,
+    ValueType minimumLimit,
+    ValueType maximumLimit
+) {
+    if (values == nullptr) {
+        return 0;
+    }
+
+    if (valuesCount <= 0) {
+        return 0;
+    }
+
+    ValueType sumOfValues = static_cast(0);
+
+    for (int index = 0; index < valuesCount; ++index) {
+        sumOfValues += values[index];
+    }
+
+    ValueType averageValue =
+        sumOfValues / static_cast(valuesCount);
+
+    ValueType adjustedValue =
+        averageValue * multiplier + offset;
+
+    if (adjustedValue < minimumLimit) {
+        adjustedValue = minimumLimit;
+    }
+
+    if (adjustedValue > maximumLimit) {
+        adjustedValue = maximumLimit;
+    }
+
+    bool valueIsNegative = adjustedValue < static_cast(0);
+
+    if (valueIsNegative) {
+        adjustedValue = static_cast(0);
+    }
+
+    ValueType integerPart =
+        static_cast(adjustedValue);
+
+    ValueType fractionalPart =
+        adjustedValue - integerPart;
+
+    if (fractionalPart >= static_cast(5)) {
+        integerPart += static_cast(1);
+    }
+
+    ResultType resultValue =
+        static_cast(integerPart);
+    
+    return resultValue;
+}
     `;
 
     const lexer = new Lexer(input);
