@@ -8,7 +8,7 @@ import TranslationUnit from '../../../core/entities/ast/translation_unit/Transla
 import TopLevelDeclaration from '../../../core/entities/ast/top_level/TopLevelDeclaration';
 import TopLevelDeclarationType from '../../../core/entities/ast/top_level/TopLevelDeclarationType';
 import DescriptionType from './entities/description/DescriptionType';
-import { generateAvroraTypeExpressionString } from './utils/generate';
+import { generateAvroraExpressionString, generateAvroraTypeExpressionString } from './utils/generate';
 import CallableDefinition from '../../../core/entities/ast/constructions/callable/definitions/CallableDefinition';
 import CallableDefinitionType from '../../../core/entities/ast/constructions/callable/definitions/CallableDefinitionType';
 import FunctionDeclaration from '../../../core/entities/ast/constructions/functions/FunctionDeclaration';
@@ -27,6 +27,14 @@ import CallableParameter from '../../../core/entities/ast/constructions/callable
 import ClassInheritance from '../../../core/entities/ast/constructions/classes/inheritance/ClassInheritance';
 import BaseClassDescription from './entities/description/descriptions/classes/BaseClassDescription';
 import MethodDeclaration from '../../../core/entities/ast/constructions/classes/methods/MethodDeclaration';
+import ConstructorDeclaration from '../../../core/entities/ast/constructions/classes/constructors/ConstructorDeclaration';
+import ConstructorClassMember from '../../../core/entities/ast/constructions/classes/members/members/ConstructorClassMember';
+import ConstructorDefinition from '../../../core/entities/ast/constructions/classes/constructors/ConstructorDefinition';
+import CreateRowSchema from './entities/internal/CreateRowSchema';
+import GeneratedAvroraRow from './entities/internal/GeneratedAvroraRow';
+import ConstructorInitializerTargetType from '../../../core/entities/ast/constructions/classes/constructors/initializers/ConstructorInitializerTargetType';
+import ConstructorInitializer from '../../../core/entities/ast/constructions/classes/constructors/initializers/ConstructorInitializer';
+import Expression from '../../../core/entities/ast/expressions/Expression';
 
 export default class AvroraTranslationUnitGenerator {
     private readonly source: string;
@@ -37,9 +45,25 @@ export default class AvroraTranslationUnitGenerator {
         this.translationUnit = translationUnit;
     }
 
+    private createRowWith(schema: CreateRowSchema): GeneratedAvroraRow {
+        return {
+            number: schema.number,
+            action: schema.action !== undefined ? schema.action : null,
+            next: schema.next,
+            condition: schema.condition !== undefined ? schema.condition : null,
+            comment: schema.comment !== undefined ? schema.comment : null,
+            subrow: schema.subrow !== undefined ? schema.subrow : null,
+            jumpKind: schema.jumpKind !== undefined ? schema.jumpKind : null,
+        };
+    }
+
     private generateStatementRows(statements: Statement[]): AvroraRow[] {
         const generator = new AvroraGenerator(this.source, statements, 0);
         return generator.generateRowsForAlgorithm();
+    }
+
+    private generateExpressionString(expression: Expression): string {
+        return generateAvroraExpressionString(expression);
     }
 
     private generateQualifiedNameString(name: QualifiedName): string {
@@ -123,6 +147,77 @@ export default class AvroraTranslationUnitGenerator {
             description: 'ОПИСАНИЕ',
             functionDescription: functionDescription,
             accessModifier: member.accessModifier,
+            isConstructor: false
+        };
+    }
+
+    private generateClassInitializerRow(initializer: ConstructorInitializer, rowNumber: number, next: number): AvroraRow {
+        const args: string = initializer.value.args.flatMap((it) => this.generateExpressionString(it)).join(', ');
+
+        switch (initializer.targetType) {
+            case ConstructorInitializerTargetType.MEMBER:
+                return this.createRowWith({
+                    number: rowNumber,
+                    action: `инициализация поля ${initializer.targetName} значением ${args}`,
+                    next: next,
+                });
+            case ConstructorInitializerTargetType.BASE_CLASS:
+                return this.createRowWith({
+                    number: rowNumber,
+                    action: `вызов конструктора базового класса ${initializer.targetName.name.name} с параметрами ${args}`,
+                    next: next,
+                });
+            case ConstructorInitializerTargetType.DELEGATING:
+                return this.createRowWith({
+                    number: rowNumber,
+                    action: `вызов конструктора ${initializer.targetName.name.name} с параметрами ${args}`,
+                    next: next,
+                });
+        }
+    }
+
+    private generateConstructorDefinitionBody(constructorDefinition: ConstructorDefinition): AvroraRow[] {
+        let rowNumber: number = 1;
+        const body: AvroraRow[] = [];
+
+        if (constructorDefinition.initializerList !== null) {
+            constructorDefinition.initializerList.forEach((item) => {
+                body.push(this.generateClassInitializerRow(item, rowNumber, rowNumber + 1));
+                rowNumber++;
+            });
+        }
+
+        if (constructorDefinition.callableDefinition !== null && constructorDefinition.callableDefinition?.type === CallableDefinitionType.BODY) {
+            body.push(...this.generateStatementRows(constructorDefinition.callableDefinition.body.body));
+        }
+
+        return body;
+    }
+
+    private generateConstructorFunctionDescription(constructorDeclaration: ConstructorDeclaration): FunctionDescription {
+        const name: string = this.generateQualifiedNameString(constructorDeclaration.name.name);
+        const params: string = this.generateParamsString(constructorDeclaration.params);
+
+        const definition: ConstructorDefinition | null = constructorDeclaration.definition;
+
+        return {
+            type: DescriptionType.FUNCTION_DECLARATION,
+            returnType: 'нет',
+            name: name,
+            params: params,
+            body: definition !== null ? this.generateConstructorDefinitionBody(definition) : [],
+        };
+    }
+
+    private generateConstructorDescription(member: ConstructorClassMember): MethodDescription {
+        const functionDescription: FunctionDescription = this.generateConstructorFunctionDescription(member.constructorDeclaration);
+
+        return {
+            name: functionDescription.name,
+            description: 'ОПИСАНИЕ',
+            functionDescription: functionDescription,
+            accessModifier: member.accessModifier,
+            isConstructor: true,
         };
     }
 
@@ -147,6 +242,10 @@ export default class AvroraTranslationUnitGenerator {
         const methods: MethodDescription[] = definition.members
             .filter((member): member is MethodClassMember => member.type === ClassMemberType.METHOD)
             .map((member) => this.generateMethodDescription(member));
+
+        definition.members
+            .filter((member): member is ConstructorClassMember => member.type === ClassMemberType.CONSTRUCTOR)
+            .forEach((it) => methods.push(this.generateConstructorDescription(it)));
 
         return {
             name: this.generateClassNameString(declaration.className),

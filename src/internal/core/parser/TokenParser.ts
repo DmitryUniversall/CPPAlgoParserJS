@@ -1,9 +1,9 @@
 import Token from '../entities/token/Token';
 import TokenType from '../entities/token/TokenType';
 import { createUnexpectedTokenErrorMessage } from '../../main/utils/errors';
-import CoreParser from './CoreParser';
+import ItemsProcessor from './ItemsProcessor';
 
-export default class TokenParser extends CoreParser<Token> {
+export default class TokenParser extends ItemsProcessor<Token> {
     protected get tokens(): Token[] {
         return this.items;
     }

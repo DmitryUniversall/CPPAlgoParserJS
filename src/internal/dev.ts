@@ -35,17 +35,18 @@ public:
     }
 };
 
-class SmartSensor : public Sensor {
+class Test : public BaseTest {
 private:
     int valuePrivate;
 
 public:
     int valuePublic;
 
-    SmartSensor(int privateValue, int publicValue)
-        : Sensor(privateValue, publicValue),
+    Test(int privateValue, int publicValue)
+        : BaseTest(privateValue, publicValue),
           valuePrivate(privateValue),
           valuePublic(publicValue) {
+          int x = 0;
     }
 
     void setValues(int privateValue, int publicValue) {
@@ -54,7 +55,7 @@ public:
     }
 
     void print() const {
-        std::cout << "SmartSensor: " << valuePrivate << ' ' << valuePublic << '\\n';
+        std::cout << "Test: " << valuePrivate << ' ' << valuePublic << '\\n';
     }
 };
 

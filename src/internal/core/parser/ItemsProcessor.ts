@@ -1,4 +1,4 @@
-export default class CoreParser<T extends any> {
+export default class ItemsProcessor<T extends any> {
     protected readonly items: T[];
     protected readonly source: string;
     protected position: number;

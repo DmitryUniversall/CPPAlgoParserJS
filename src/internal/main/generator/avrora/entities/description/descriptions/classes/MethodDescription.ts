@@ -6,4 +6,5 @@ export default interface MethodDescription {
     description: string;
     accessModifier: AccessModifierType;
     functionDescription: FunctionDescription;
+    isConstructor: boolean
 }

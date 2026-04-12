@@ -1,4 +1,4 @@
-import ItemsProcessor from '../../../core/parser/CoreParser';
+import ItemsProcessor from '../../../core/parser/ItemsProcessor';
 import Statement from '../../../core/entities/ast/statements/Statement';
 import AvroraRow from './entities/AvroraRow';
 import StatementType from '../../../core/entities/ast/statements/StatementType';
@@ -20,16 +20,7 @@ import GeneratedAvroraRow from './entities/internal/GeneratedAvroraRow';
 import AvroraGeneratorJumpKind from './entities/internal/AvroraGeneratorJumpKind';
 import KeywordType from '../../../core/entities/keyword/KeywordType';
 import { generateAvroraExpressionString, generateAvroraTypeExpressionString } from './utils/generate';
-
-type CreateRowSchema = {
-    number: number;
-    action?: string | null;
-    next: number;
-    condition?: string | null;
-    comment?: string | null;
-    subrow?: AvroraRow | null;
-    jumpKind?: AvroraGeneratorJumpKind | null;
-};
+import CreateRowSchema from './entities/internal/CreateRowSchema';
 
 export default class AvroraGenerator extends ItemsProcessor<Statement> {
     private rowNumber: number;
