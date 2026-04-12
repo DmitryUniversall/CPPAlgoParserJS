@@ -188,7 +188,12 @@ export default class AvroraTranslationUnitGenerator {
         }
 
         if (constructorDefinition.callableDefinition !== null && constructorDefinition.callableDefinition?.type === CallableDefinitionType.BODY) {
-            body.push(...this.generateStatementRows(constructorDefinition.callableDefinition.body.body));
+            const rows: AvroraRow[] = this.generateStatementRows(constructorDefinition.callableDefinition.body.body);
+            rows.forEach((it) => {
+                it.number += rowNumber - 1;
+                it.next += rowNumber - 1;
+                body.push(it)
+            })
         }
 
         return body;
