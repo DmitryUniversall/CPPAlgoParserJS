@@ -1,7 +1,3 @@
-import TypeExpression from '../../type/TypeExpression';
-import QualifiedName from '../../../qualified_name/QualifiedName';
+import GenericName from '../../../generic_name/GenericName';
 
-export default interface ClassName {
-    name: QualifiedName;
-    genericParams: TypeExpression[];
-}
+export default interface ClassName extends GenericName {}

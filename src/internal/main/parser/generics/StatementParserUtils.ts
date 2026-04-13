@@ -12,6 +12,8 @@ import { createUnexpectedTokenErrorMessage } from '../../utils/errors';
 import CallablePrefixModifierType from '../../../core/entities/ast/constructions/callable/modifiers/CallablePrefixModifierType';
 import CallablePostfixModifierType from '../../../core/entities/ast/constructions/callable/modifiers/CallablePostfixModifierType';
 import GenericTokenParser from './GenericTokenParser';
+import QualifiedName from '../../../core/entities/qualified_name/QualifiedName';
+import GenericName from '../../../core/entities/generic_name/GenericName';
 
 export default class StatementParserUtils extends GenericTokenParser {
     protected parseTypeExpression(): TypeExpression {
@@ -33,6 +35,18 @@ export default class StatementParserUtils extends GenericTokenParser {
         const result: Expression = parser.parseExpression();
         this.position = parser.currentPosition;
         return result;
+    }
+
+    protected parseGenericName(): GenericName {
+        const name: QualifiedName = this.parseQualifiedName();
+
+        let typeParams: TypeExpression[] = [];
+        if (this.peek()?.text === operators.lt.literal) typeParams = this.parseTypeParameters();
+
+        return {
+            name: name,
+            typeParams: typeParams,
+        };
     }
 
     protected typeLookAhead(): TypeLookAheadResult {

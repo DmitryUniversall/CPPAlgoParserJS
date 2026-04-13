@@ -5,9 +5,6 @@ import ClassMemberLookAheadKind from '../../entities/ClassMemberLookAheadKind';
 import TokenType from '../../../../core/entities/token/TokenType';
 import { keywords } from '../../../../core/entities/keyword/keywords/keywords';
 import ClassMember from '../../../../core/entities/ast/constructions/classes/members/ClassMember';
-import TypeExpression from '../../../../core/entities/ast/type/TypeExpression';
-import { operators } from '../../../../core/entities/operator/operators/operators';
-import OperatorType from '../../../../core/entities/operator/OperatorType';
 import ClassDeclaration from '../../../../core/entities/ast/constructions/classes/ClassDeclaration';
 import StatementType from '../../../../core/entities/ast/statements/StatementType';
 import ClassMemberType from '../../../../core/entities/ast/constructions/classes/members/ClassMemberType';
@@ -23,7 +20,6 @@ import MethodDeclaration from '../../../../core/entities/ast/constructions/class
 import ASTNodeType from '../../../../core/entities/ast/ASTNodeType';
 import ConstructorParser from './ConstructorParser';
 import ConstructorDeclaration from '../../../../core/entities/ast/constructions/classes/constructors/ConstructorDeclaration';
-import QualifiedName from '../../../../core/entities/qualified_name/QualifiedName';
 import { CallableParser } from '../CallableParser';
 import CallablePrefixModifierType from '../../../../core/entities/ast/constructions/callable/modifiers/CallablePrefixModifierType';
 
@@ -53,15 +49,7 @@ export default class ClassParser extends ConstructionParserUtils {
     }
 
     private parseClassName(): ClassName {
-        const classNameString: QualifiedName = this.parseQualifiedName();
-
-        let genericParams: TypeExpression[] = [];
-        if (this.peek()?.text === operators.lt.literal) genericParams = this.parseTypeParameters();
-
-        return {
-            name: classNameString,
-            genericParams: genericParams,
-        };
+        return this.parseGenericName() as ClassName;  // TODO: Is this ok?
     }
 
     private lookAheadForClassMember(className: ClassName): ClassMemberLookAheadResult {

@@ -73,11 +73,11 @@ export default class AvroraTranslationUnitGenerator {
     private generateClassNameString(className: ClassName): string {
         const baseName: string = this.generateQualifiedNameString(className.name);
 
-        if (className.genericParams.length === 0) return baseName;
+        if (className.typeParams.length === 0) return baseName;
 
-        const genericParams: string = className.genericParams.map((it) => generateAvroraTypeExpressionString(it)).join(', ');
+        const typeParams: string = className.typeParams.map((it) => generateAvroraTypeExpressionString(it)).join(', ');
 
-        return `${baseName}<${genericParams}>`;
+        return `${baseName}<${typeParams}>`;
     }
 
     private generateParamsString(params: CallableParameter[]): string {

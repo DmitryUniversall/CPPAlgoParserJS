@@ -114,7 +114,7 @@ std::vector<int> calculateAdjustedAverage(
     ValueType maximumLimit
 ) {
     if (values == nullptr) {
-        return 0;
+        return static_cast<ReturnType>(0);
     }
 
     if (valuesCount <= 0) {

@@ -19,32 +19,18 @@ import Expression from '../../../../core/entities/ast/expressions/Expression';
 import ConstructorInitializerValueType from '../../../../core/entities/ast/constructions/classes/constructors/initializers/ConstructorInitializerValueType';
 import InheritanceBaseClass from '../../../../core/entities/ast/constructions/classes/inheritance/InheritanceBaseClass';
 import { operators } from '../../../../core/entities/operator/operators/operators';
-import QualifiedName from '../../../../core/entities/qualified_name/QualifiedName';
-import TypeExpression from '../../../../core/entities/ast/type/TypeExpression';
-import OperatorType from '../../../../core/entities/operator/OperatorType';
 
 export default class ConstructorParser extends MethodParser {
     private parseClassName(): ClassName {
         // TODO: Duplicate from ClassParser
-        const classNameString: QualifiedName = this.parseQualifiedName();
-
-        let genericParams: TypeExpression[] = [];
-        if (this.peek()?.text === operators[OperatorType.LT].literal) genericParams = this.parseTypeParameters();
-
-        return {
-            name: classNameString,
-            genericParams: genericParams,
-        };
+        return this.parseGenericName() as ClassName;
     }
 
     private isSameClassName(name: ClassName, className: ClassName): boolean {
         return name.name.name === className.name.name;
     }
 
-    private resolveConstructorInitializerTargetType(
-        targetName: ClassName | string,
-        currentClassName: ClassName
-    ): ConstructorInitializerTargetType {
+    private resolveConstructorInitializerTargetType(targetName: ClassName | string, currentClassName: ClassName): ConstructorInitializerTargetType {
         if (typeof targetName !== 'string') {
             if (this.isSameClassName(targetName, currentClassName)) {
                 return ConstructorInitializerTargetType.DELEGATING;
@@ -212,7 +198,7 @@ export default class ConstructorParser extends MethodParser {
     ): ConstructorDeclaration {
         const callablePrefixModifiers: CallablePrefixModifierType[] = this.parseCallablePrefixModifiers();
 
-        const name: ClassName = { name: this.parseQualifiedName(), genericParams: [] };
+        const name: ClassName = { name: this.parseQualifiedName(), typeParams: [] };
         const params: CallableParameter[] = this.parseCallableParameterList();
 
         const callablePostfixModifiers: CallablePostfixModifierType[] = this.parseCallablePostfixModifiers();

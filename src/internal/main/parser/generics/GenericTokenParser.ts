@@ -3,6 +3,7 @@ import QualifiedName from '../../../core/entities/qualified_name/QualifiedName';
 import TokenType from '../../../core/entities/token/TokenType';
 import { operators } from '../../../core/entities/operator/operators/operators';
 import Token from '../../../core/entities/token/Token';
+import TypeExpression from '../../../core/entities/ast/type/TypeExpression';
 
 export default class GenericTokenParser extends TokenParser {
     protected parseQualifiedName(): QualifiedName {

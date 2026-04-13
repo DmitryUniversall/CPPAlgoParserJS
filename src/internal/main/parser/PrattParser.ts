@@ -16,6 +16,7 @@ import CallExpression from '../../core/entities/ast/expressions/expressions/othe
 import IndexExpression from '../../core/entities/ast/expressions/expressions/other/IndexExpression';
 import ConstructorCallExpression from '../../core/entities/ast/expressions/expressions/other/ConstructorCallExpression';
 import KeywordKind from '../../core/entities/keyword/KeywordKind';
+import TypeArgsLookAheadResult from './entities/TypeArgsLookAheadResult';
 
 const prefixOperators: Record<string, Operator> = Object.entries(operators).reduce((acc: Record<string, Operator>, [_, config]) => {
     if (config.prefix) acc[config.literal] = config;
@@ -53,6 +54,31 @@ export default class PrattParser extends TokenParser {
         const result: TypeExpression = parser.parseTypeExpression();
         this.position = parser.currentPosition;
         return result;
+    }
+
+    private typeArgsLookAhead(): TypeArgsLookAheadResult | null {
+        const parser = new TypeParser(this.source, this.tokens, this.position);
+        let args: TypeExpression[];
+
+        try {
+            args = parser.parseTypeParameters();
+
+            return {
+                args: args,
+                endPosition: parser.currentPosition,
+            };
+        } catch {
+            return null;
+        }
+    }
+
+    private canHaveTypeArguments(left: Expression): boolean {
+        return [
+            ExpressionType.IDENT_EXPRESSION,
+            ExpressionType.MEMBER_EXPRESSION,
+            ExpressionType.PTR_MEMBER_EXPRESSION,
+            ExpressionType.SCOPE_RESOLUTION_EXPRESSION,
+        ].includes(left.type);
     }
 
     private parsePrefixExpression(token: Token): Expression {
@@ -193,7 +219,7 @@ export default class PrattParser extends TokenParser {
             };
         }
 
-        // left <op> right
+        // left OPERATOR right
         return {
             nodeType: ASTNodeType.EXPRESSION,
             type: ExpressionType.BINARY_OPERATION_EXPRESSION,
@@ -274,7 +300,7 @@ export default class PrattParser extends TokenParser {
         };
     }
 
-    private parseCallExpression(left: Expression): CallExpression {
+    private parseCallExpression(left: Expression, typeArgs: TypeExpression[]): CallExpression {
         const args: Expression[] = [];
 
         if (this.peek()?.tokenType !== TokenType.R_PAREN) {
@@ -292,6 +318,7 @@ export default class PrattParser extends TokenParser {
             type: ExpressionType.CALL_EXPRESSION,
             called: left,
             args: args,
+            typeArgs: typeArgs,
         };
     }
 
@@ -348,12 +375,28 @@ export default class PrattParser extends TokenParser {
                 continue;
             }
 
+            // left<A, B>(...)
+            if (this.canHaveTypeArguments(left)) {  // TODO: Make more flexible
+                let typeArgs: TypeArgsLookAheadResult | null = this.typeArgsLookAhead();
+
+                if (typeArgs !== null) {
+                    this.position = typeArgs.endPosition;
+
+                    const callPrecedence = 9;
+                    if (callPrecedence <= minPrecedence) break;
+
+                    this.expectNextToken(TokenType.L_PAREN);
+                    left = this.parseCallExpression(left, typeArgs.args);
+                    continue;
+                }
+            }
+
             if (token.tokenType === TokenType.L_PAREN) {
                 const callPrecedence = 9;
                 if (callPrecedence <= minPrecedence) break;
 
                 this.nextOrThrow();
-                left = this.parseCallExpression(left);
+                left = this.parseCallExpression(left, []);
                 continue;
             }
 
