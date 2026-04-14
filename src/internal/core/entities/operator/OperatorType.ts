@@ -5,6 +5,8 @@ enum OperatorType {
     SLASH = 'slash',
     INC = 'inc',
     DEC = 'dec',
+    NOT = 'not',
+    BITWISE_NOT = 'bitwiseNot',
 
     EQ = 'eq',
     NEQ = 'neq',

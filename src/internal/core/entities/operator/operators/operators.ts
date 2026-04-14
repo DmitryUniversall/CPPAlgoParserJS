@@ -4,11 +4,33 @@ import OperatorAssoc from '../OperatorAssoc';
 
 export const operators: Record<OperatorType, Operator> = {
     [OperatorType.PLUS]: { type: OperatorType.PLUS, literal: '+', infix: { precedence: 6, assoc: OperatorAssoc.LEFT } },
-    [OperatorType.MINUS]: { type: OperatorType.MINUS, literal: '-', infix: { precedence: 6, assoc: OperatorAssoc.LEFT }, prefix: { precedence: 8, assoc: OperatorAssoc.LEFT } },
-    [OperatorType.STAR]: { type: OperatorType.STAR, literal: '*', infix: { precedence: 7, assoc: OperatorAssoc.LEFT }, prefix: { precedence: 8, assoc: OperatorAssoc.LEFT } },
+    [OperatorType.MINUS]: {
+        type: OperatorType.MINUS,
+        literal: '-',
+        infix: { precedence: 6, assoc: OperatorAssoc.LEFT },
+        prefix: { precedence: 8, assoc: OperatorAssoc.LEFT },
+    },
+    [OperatorType.STAR]: {
+        type: OperatorType.STAR,
+        literal: '*',
+        infix: { precedence: 7, assoc: OperatorAssoc.LEFT },
+        prefix: { precedence: 8, assoc: OperatorAssoc.LEFT },
+    },
     [OperatorType.SLASH]: { type: OperatorType.SLASH, literal: '/', infix: { precedence: 7, assoc: OperatorAssoc.LEFT } },
-    [OperatorType.INC]: { type: OperatorType.INC, literal: '++', prefix: { precedence: 8, assoc: OperatorAssoc.LEFT }, postfix: { precedence: 8, assoc: OperatorAssoc.LEFT } },
-    [OperatorType.DEC]: { type: OperatorType.DEC, literal: '--', prefix: { precedence: 8, assoc: OperatorAssoc.LEFT }, postfix: { precedence: 8, assoc: OperatorAssoc.LEFT } },
+    [OperatorType.INC]: {
+        type: OperatorType.INC,
+        literal: '++',
+        prefix: { precedence: 8, assoc: OperatorAssoc.LEFT },
+        postfix: { precedence: 8, assoc: OperatorAssoc.LEFT },
+    },
+    [OperatorType.DEC]: {
+        type: OperatorType.DEC,
+        literal: '--',
+        prefix: { precedence: 8, assoc: OperatorAssoc.LEFT },
+        postfix: { precedence: 8, assoc: OperatorAssoc.LEFT },
+    },
+    [OperatorType.NOT]: { type: OperatorType.NOT, literal: '!', prefix: { precedence: 8, assoc: OperatorAssoc.LEFT } },
+    [OperatorType.BITWISE_NOT]: { type: OperatorType.BITWISE_NOT, literal: '~', prefix: { precedence: 8, assoc: OperatorAssoc.LEFT } },
 
     [OperatorType.EQ]: { type: OperatorType.EQ, literal: '==', infix: { precedence: 4, assoc: OperatorAssoc.LEFT } },
     [OperatorType.NEQ]: { type: OperatorType.NEQ, literal: '!=', infix: { precedence: 4, assoc: OperatorAssoc.LEFT } },

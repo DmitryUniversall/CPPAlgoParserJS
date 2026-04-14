@@ -11,6 +11,7 @@ import CallableDefinitionType from '../../../core/entities/ast/constructions/cal
 import { keywords } from '../../../core/entities/keyword/keywords/keywords';
 import Statement from '../../../core/entities/ast/statements/Statement';
 import StatementType from '../../../core/entities/ast/statements/StatementType';
+import Expression from '../../../core/entities/ast/expressions/Expression';
 
 export interface ParseFunctionDefinitionOptions {
     allowPureSpecifier?: boolean;
@@ -41,7 +42,13 @@ export class CallableParser extends ConstructionParserUtils {
             const paramType: TypeExpression = this.parseTypeExpression();
             const paramName: Token = this.expectNextToken(TokenType.IDENTIFIER);
 
-            params.push({ name: paramName.text, type: paramType });
+            let defaultExpr: Expression | null = null;
+            if (this.peek()?.tokenType === TokenType.OPERATOR && this.peek()?.text === operators.assign.literal) {
+                this.expectNextToken(TokenType.OPERATOR, operators.assign.literal);
+                defaultExpr = this.parseExpression();
+            }
+
+            params.push({ name: paramName.text, type: paramType, defaultExpr: defaultExpr });
 
             if (this.peek()?.tokenType !== TokenType.R_PAREN) this.expectNextToken(TokenType.COMMA);
         }

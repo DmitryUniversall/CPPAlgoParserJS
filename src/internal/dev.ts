@@ -8,160 +8,108 @@ import AvroraTranslationUnitGenerator from './main/generator/avrora/AvroraTransl
 function main() {
     // noinspection CheckDtdRefs
     const input = `
-
-class Sensor {
-private:
-    int valuePrivate;
-
-    void setValuePrivate(int number) {
-        valuePrivate = number * 3;
-    }
+class cl_base
+{
+protected:
+    string s_object_name;
+    cl_base* p_head_object;
+    vector<cl_base*> subordinate_objects;
 
 public:
-    int valuePublic;
+    cl_base(cl_base* p_head_object, string s_object_name = "Base_object")
+    {
+        this->p_head_object = p_head_object;
+        this->s_object_name = s_object_name;
 
-    Sensor(int privateValue, int publicValue) {
-        setValuePrivate(privateValue);
-        valuePublic = publicValue;
-    }
-
-    void setValues(int privateValue, int publicValue) {
-        setValuePrivate(privateValue);
-        valuePublic = publicValue;
-    }
-
-    void print() const {
-        std::cout << "Sensor: " << valuePrivate << ' ' << valuePublic << '\\n';
-    }
-};
-
-class Test : public BaseTest, private BaseTest2 {
-private:
-    int valuePrivate;
-
-public:
-    int valuePublic;
-
-    Test(int privateValue, int publicValue)
-        : BaseTest(privateValue, publicValue),
-          valuePrivate(privateValue),
-          valuePublic(publicValue) {
-          int x = 0;
-    }
-
-    void setValues(int privateValue, int publicValue) {
-        if (x > 0) {
-            valuePrivate = privateValue;
-            valuePublic = publicValue;
+        if (p_head_object != nullptr)
+        {
+            p_head_object->subordinate_objects.push_back(this);
         }
     }
 
-    void print() const {
-        if (x > 0) {
-            std::cout << "Test: " << valuePrivate << ' ' << valuePublic << '\\n';
-        } {
-            std::cout << "Testttttttttttttttttttttttttttttttttt" << endl;
+    virtual ~cl_base()
+    {
+        for (cl_base* object : subordinate_objects)
+        {
+            delete object;
         }
     }
+
+    bool set_object_name(string new_name)
+    {
+        if (p_head_object == nullptr)
+        {
+            s_object_name = new_name;
+            return true;
+        }
+
+        for (cl_base* object : p_head_object->subordinate_objects)
+        {
+            if (object != this && object->s_object_name == new_name)
+            {
+                return false;
+            }
+        }
+
+        s_object_name = new_name;
+        return true;
+    }
+
+    string get_object_name()
+    {
+        return s_object_name;
+    }
+
+    cl_base* get_head_object()
+    {
+        return p_head_object;
+    }
+
+    int get_subordinate_object_count()
+    {
+        return static_cast<int>(subordinate_objects.size());
+    }
+
+    void print_tree()
+    {
+        queue<cl_base*> objects;
+        objects.push(this);
+
+        while (!objects.empty())
+        {
+            cl_base* current_object = objects.front();
+            objects.pop();
+
+            cout << current_object->s_object_name << endl;
+
+            for (cl_base* object : current_object->subordinate_objects)
+            {
+                objects.push(object);
+            }
+        }
+    }
+
+    cl_base* get_subordinate_object(string object_name)
+    {
+        for (cl_base* object : subordinate_objects)
+        {
+            if (object->s_object_name == object_name)
+            {
+                return object;
+            }
+        }
+        return nullptr;
+    }
+
+    cl_base* get_subordinate_object(int index)
+    {
+        if (index < 1 || index > static_cast<int>(subordinate_objects.size()))
+        {
+            return nullptr;
+        }
+        return subordinate_objects[index - 1];
+    }
 };
-
-int main() {
-    int firstValue;
-    int secondValue;
-    std::cin >> firstValue >> secondValue;
-
-    SmartSensor smartSensor(firstValue, secondValue);
-
-    smartSensor.Sensor::print();
-    smartSensor.SmartSensor::print();
-
-    int number;
-    std::cin >> number;
-
-    smartSensor.SmartSensor::valuePublic = number;
-    smartSensor.Sensor::valuePublic = number;
-
-    smartSensor.SmartSensor::print();
-    smartSensor.Sensor::print();
-
-    int a;
-    int b;
-    std::cin >> a >> b;
-
-    if (a > 0) {
-        smartSensor.SmartSensor::setValues(a + 1, b + 1);
-        smartSensor.Sensor::setValues(a - 1, b - 1);
-
-        smartSensor.SmartSensor::print();
-        smartSensor.Sensor::print();
-    } else {
-        smartSensor.Sensor::setValues(a + 1, b + 1);
-        smartSensor.SmartSensor::setValues(a - 1, b - 1);
-
-        smartSensor.Sensor::print();
-        smartSensor.SmartSensor::print();
-    }
-}
-
-class Test;
-
-std::vector<int> calculateAdjustedAverage(
-    const ValueType* values,
-    int valuesCount,
-    ValueType multiplier,
-    ValueType offset,
-    ValueType minimumLimit,
-    ValueType maximumLimit
-) {
-    if (values == nullptr) {
-        return static_cast<ReturnType>(0);
-    }
-
-    if (valuesCount <= 0) {
-        return 0;
-    }
-
-    ValueType sumOfValues = static_cast(0);
-
-    for (int index = 0; index < valuesCount; ++index) {
-        sumOfValues += values[index];
-    }
-
-    ValueType averageValue =
-        sumOfValues / static_cast(valuesCount);
-
-    ValueType adjustedValue =
-        averageValue * multiplier + offset;
-
-    if (adjustedValue < minimumLimit) {
-        adjustedValue = minimumLimit;
-    }
-
-    if (adjustedValue > maximumLimit) {
-        adjustedValue = maximumLimit;
-    }
-
-    bool valueIsNegative = adjustedValue < static_cast(0);
-
-    if (valueIsNegative) {
-        adjustedValue = static_cast(0);
-    }
-
-    ValueType integerPart =
-        static_cast(adjustedValue);
-
-    ValueType fractionalPart =
-        adjustedValue - integerPart;
-
-    if (fractionalPart >= static_cast(5)) {
-        integerPart += static_cast(1);
-    }
-
-    ResultType resultValue =
-        static_cast(integerPart);
-    
-    return resultValue;
-}
     `;
 
     const lexer = new Lexer(input);
@@ -169,11 +117,12 @@ std::vector<int> calculateAdjustedAverage(
 
     const translationUnitParser = new TranslationUnitParser(input, tokens, 0);
     const translationUnit: TranslationUnit = translationUnitParser.parseTranslationUnit();
-    console.log(translationUnit);
+    // console.log(translationUnit);
 
     const translationUnitGenerator = new AvroraTranslationUnitGenerator(input, translationUnit);
     const descriptions: Description[] = translationUnitGenerator.generateDescriptionsForTranslationUnit();
-    console.log(descriptions);
+    console.log(JSON.stringify(translationUnit));
+    console.log(JSON.stringify(descriptions));
 
     // const parser = new Parser(input, tokens, 0);
     // const statements: Statement[] = parser.parseAlgorithm();

@@ -49,8 +49,8 @@ export default class StatementParserUtils extends GenericTokenParser {
         };
     }
 
-    protected typeLookAhead(): TypeLookAheadResult {
-        const parser = new TypeParser(this.source, this.tokens, this.position);
+    protected typeLookAhead(start: number = -1): TypeLookAheadResult {
+        const parser = new TypeParser(this.source, this.tokens, start == -1 ? this.position : start);
         const typeExpression: TypeExpression = parser.parseTypeExpression();
 
         return {

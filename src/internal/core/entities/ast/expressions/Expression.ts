@@ -21,6 +21,7 @@ import CallExpression from './expressions/other/CallExpression';
 import IndexExpression from './expressions/other/IndexExpression';
 import ConstructorCallExpression from './expressions/other/ConstructorCallExpression';
 import PrefixDecrementExpression from './expressions/prefix/PrefixDecrementExpression';
+import BooleanNegateExpression from './expressions/prefix/BooleanNegateExpression';
 
 type Expression =
     | DerefExpression
@@ -45,6 +46,7 @@ type Expression =
     | TernaryExpression
     | CallExpression
     | IndexExpression
-    | ConstructorCallExpression;
+    | ConstructorCallExpression
+    | BooleanNegateExpression;
 
 export default Expression;

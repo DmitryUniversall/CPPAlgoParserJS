@@ -127,6 +127,15 @@ export default class PrattParser extends TokenParser {
             };
         }
 
+        // !Obj
+        if (token.text === operators.not.literal) {
+            return {
+                nodeType: ASTNodeType.EXPRESSION,
+                type: ExpressionType.BOOLEAN_NEGATE_EXPRESSION,
+                expr: this.parseExpression(prefixOperators[token.text].prefix!!.precedence)
+            };
+        }
+
         // new Obj<...>
         if (token.tokenType === TokenType.KEYWORD && token.text === keywords.NEW.literal) {
             const typeExpression: TypeExpression = this.parseTypeExpression();
@@ -376,7 +385,8 @@ export default class PrattParser extends TokenParser {
             }
 
             // left<A, B>(...)
-            if (this.canHaveTypeArguments(left)) {  // TODO: Make more flexible
+            if (this.canHaveTypeArguments(left)) {
+                // TODO: Make more flexible
                 let typeArgs: TypeArgsLookAheadResult | null = this.typeArgsLookAhead();
 
                 if (typeArgs !== null) {

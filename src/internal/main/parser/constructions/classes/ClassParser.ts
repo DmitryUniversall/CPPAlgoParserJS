@@ -21,7 +21,9 @@ import ASTNodeType from '../../../../core/entities/ast/ASTNodeType';
 import ConstructorParser from './ConstructorParser';
 import ConstructorDeclaration from '../../../../core/entities/ast/constructions/classes/constructors/ConstructorDeclaration';
 import { CallableParser } from '../CallableParser';
-import CallablePrefixModifierType from '../../../../core/entities/ast/constructions/callable/modifiers/CallablePrefixModifierType';
+import { operators } from '../../../../core/entities/operator/operators/operators';
+import DestructorDeclaration from '../../../../core/entities/ast/constructions/classes/destructors/DestructorDeclaration';
+import DestructorParser from './DestructorParser';
 
 export default class ClassParser extends ConstructionParserUtils {
     private parseMethodDeclaration(accessModifier: AccessModifierType): MethodDeclaration {
@@ -31,10 +33,10 @@ export default class ClassParser extends ConstructionParserUtils {
         return result;
     }
 
-    private skipCallablePrefixModifiers(): void {
-        const parser = new CallableParser(this.source, this.tokens, this.position);
+    private skipCallablePrefixModifiersFrom(start: number): number {
+        const parser = new CallableParser(this.source, this.tokens, start);
         parser.parseCallablePrefixModifiers();
-        this.position = parser.currentPosition;
+        return parser.currentPosition;
     }
 
     private parseConstructorDeclaration(
@@ -48,50 +50,73 @@ export default class ClassParser extends ConstructionParserUtils {
         return result;
     }
 
+    private parseDestructorDeclaration(accessModifier: AccessModifierType, className: ClassName) {
+        const parser = new DestructorParser(this.source, this.tokens, this.position);
+        const result: DestructorDeclaration = parser.parseDestructorDeclaration(accessModifier, className);
+        this.position = parser.currentPosition;
+        return result;
+    }
+
     private parseClassName(): ClassName {
-        return this.parseGenericName() as ClassName;  // TODO: Is this ok?
+        return this.parseGenericName() as ClassName; // TODO: Is this ok?
     }
 
     private lookAheadForClassMember(className: ClassName): ClassMemberLookAheadResult {
-        let current: Token | null = this.peekOffset(0);
-        if (current === null) return { kind: ClassMemberLookAheadKind.NONE };
+        let pointer: number = this.position;
+        let current: Token | undefined = this.tokens[pointer];
 
-        if (current.tokenType === TokenType.KEYWORD && current.text === keywords.CLASS.literal) return { kind: ClassMemberLookAheadKind.NESTED_CLASS };
+        if (!current) return { kind: ClassMemberLookAheadKind.NONE };
+
+        if (current.tokenType === TokenType.KEYWORD && current.text === keywords.CLASS.literal) {
+            return { kind: ClassMemberLookAheadKind.NESTED_CLASS };
+        }
 
         if (
             current.tokenType === TokenType.KEYWORD &&
             (current.text === keywords.PUBLIC?.literal || current.text === keywords.PRIVATE?.literal || current.text === keywords.PROTECTED?.literal) &&
-            this.peekOffset(1)?.tokenType === TokenType.COLON
+            this.tokens[pointer + 1]?.tokenType === TokenType.COLON
         ) {
             return { kind: ClassMemberLookAheadKind.ACCESS_MODIFIER };
         }
 
-        if (CallablePrefixModifierType[current.text.toUpperCase() as keyof typeof CallablePrefixModifierType] !== undefined) {
-            this.skipCallablePrefixModifiers();
-            current = this.peekOffset(0);
-            if (current === null) return { kind: ClassMemberLookAheadKind.NONE };
+        pointer = this.skipCallablePrefixModifiersFrom(pointer);
+        current = this.tokens[pointer];
+        if (!current) return { kind: ClassMemberLookAheadKind.NONE };
+
+        // Destructor: ~ClassName(
+        if (
+            current.tokenType === TokenType.OPERATOR &&
+            current.text === operators.bitwiseNot.literal &&
+            this.tokens[pointer + 1]?.tokenType === TokenType.IDENTIFIER &&
+            this.tokens[pointer + 1]?.text === className.name.name &&
+            this.tokens[pointer + 2]?.tokenType === TokenType.L_PAREN
+        ) {
+            return { kind: ClassMemberLookAheadKind.DESTRUCTOR };
         }
 
-        if (current.tokenType === TokenType.IDENTIFIER && current.text === className.name.name && this.peekOffset(1)?.tokenType === TokenType.L_PAREN)
+        // Constructor: ClassName(
+        if (current.tokenType === TokenType.IDENTIFIER && current.text === className.name.name && this.tokens[pointer + 1]?.tokenType === TokenType.L_PAREN) {
             return { kind: ClassMemberLookAheadKind.CONSTRUCTOR };
-
-        let pointer: number = this.position;
+        }
 
         try {
-            const { endPosition } = this.typeLookAhead();
+            const { endPosition } = this.typeLookAhead(pointer);
             pointer = endPosition;
         } catch {
             return { kind: ClassMemberLookAheadKind.NONE };
         }
 
         current = this.tokens[pointer];
-
-        if (!current || current.tokenType !== TokenType.IDENTIFIER) return { kind: ClassMemberLookAheadKind.NONE };
+        if (!current || current.tokenType !== TokenType.IDENTIFIER) {
+            return { kind: ClassMemberLookAheadKind.NONE };
+        }
 
         pointer++;
         current = this.tokens[pointer];
 
-        if (current?.tokenType === TokenType.L_PAREN) return { kind: ClassMemberLookAheadKind.METHOD };
+        if (current?.tokenType === TokenType.L_PAREN) {
+            return { kind: ClassMemberLookAheadKind.METHOD };
+        }
 
         return { kind: ClassMemberLookAheadKind.FIELD };
     }
@@ -130,6 +155,17 @@ export default class ClassParser extends ConstructionParserUtils {
         };
     }
 
+    private parseDestructor(accessModifier: AccessModifierType, className: ClassName): ClassMember {
+        const destructorDeclaration: DestructorDeclaration = this.parseDestructorDeclaration(accessModifier, className);
+
+        return {
+            nodeType: ASTNodeType.DECLARATION,
+            type: ClassMemberType.DESTRUCTOR,
+            accessModifier: accessModifier,
+            destructorDeclaration: destructorDeclaration,
+        };
+    }
+
     private parseNestedClass(accessModifier: AccessModifierType): NestedClassClassMember {
         const classDefinition: ClassDeclaration = this.parseClassDeclaration();
 
@@ -159,6 +195,9 @@ export default class ClassParser extends ConstructionParserUtils {
                     break;
                 case ClassMemberLookAheadKind.CONSTRUCTOR:
                     members.push(this.parseConstructor(currentAccessModifier, className, inheritance));
+                    break;
+                case ClassMemberLookAheadKind.DESTRUCTOR:
+                    members.push(this.parseDestructor(currentAccessModifier, className));
                     break;
                 case ClassMemberLookAheadKind.NESTED_CLASS:
                     members.push(this.parseNestedClass(currentAccessModifier));
