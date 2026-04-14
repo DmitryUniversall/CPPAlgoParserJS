@@ -13,7 +13,6 @@ import IfStatement from '../../core/entities/ast/statements/statements/IfStateme
 import { keywords } from '../../core/entities/keyword/keywords/keywords';
 import WhileStatement from '../../core/entities/ast/statements/statements/WhileStatement';
 import DeclarationStatement from '../../core/entities/ast/statements/statements/declaration/DeclarationStatement';
-import ForStatement from '../../core/entities/ast/statements/statements/ForStatement';
 import ExpressionStatement from '../../core/entities/ast/statements/statements/ExpressionStatement';
 import Token from '../../core/entities/token/Token';
 import Statement from '../../core/entities/ast/statements/Statement';
@@ -24,6 +23,8 @@ import KeywordKind from '../../core/entities/keyword/KeywordKind';
 import TypedConstructLookAheadResult from './entities/TypedConstructLookAheadResult';
 import TypedConstructKind from './entities/TypedConstructKind';
 import ReturnStatement from '../../core/entities/ast/statements/statements/ReturnStatement';
+import ForStatement from '../../core/entities/ast/statements/statements/for_statement/ForStatement';
+import ForStatementKind from '../../core/entities/ast/statements/statements/for_statement/ForStatementKind';
 
 const keywordExpressionsMap: Record<string, Keyword> = Object.entries(keywords).reduce((acc: Record<string, Keyword>, [_, keyword]) => {
     if (keyword.kind === KeywordKind.EXPRESSION) acc[keyword.literal] = keyword;
@@ -194,13 +195,35 @@ export default class StatementParser extends StatementParserUtils {
 
         this.expectNextToken(TokenType.L_PAREN);
 
-        const init: Expression | DeclarationStatement = this.isDeclarationStart() ? this.parseDeclarationStatement(false) : this.parseExpression();
+        const firstPart: Expression | DeclarationStatement = this.isDeclarationStart() ? this.parseDeclarationStatement(false) : this.parseExpression();
+
+        // Range for
+        if (this.peek()?.tokenType === TokenType.COLON) {
+            this.expectNextToken(TokenType.COLON);
+
+            const iterable: Expression = this.parseExpression();
+            this.expectNextToken(TokenType.R_PAREN);
+
+            const body: BlockStatement = this.parseBlockStatement();
+
+            return {
+                nodeType: ASTNodeType.STATEMENT,
+                type: StatementType.FOR_STATEMENT,
+                kind: ForStatementKind.RANGE,
+                item: firstPart,
+                iterable: iterable,
+                body: body,
+            };
+        }
+
         this.expectNextToken(TokenType.SEMI);
 
         const condition: Expression = this.parseExpression();
+
         this.expectNextToken(TokenType.SEMI);
 
         const step: Expression = this.parseExpression();
+
         this.expectNextToken(TokenType.R_PAREN);
 
         const body: BlockStatement = this.parseBlockStatement();
@@ -208,7 +231,8 @@ export default class StatementParser extends StatementParserUtils {
         return {
             nodeType: ASTNodeType.STATEMENT,
             type: StatementType.FOR_STATEMENT,
-            init: init,
+            kind: ForStatementKind.CLASSIC,
+            init: firstPart,
             condition: condition,
             step: step,
             body: body,
@@ -216,7 +240,7 @@ export default class StatementParser extends StatementParserUtils {
     }
 
     private parseExpressionStatement(): ExpressionStatement {
-        const expr = this.parseExpression();
+        const expr: Expression = this.parseExpression();
 
         this.expectNextToken(TokenType.SEMI);
 

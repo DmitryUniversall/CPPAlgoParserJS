@@ -3,7 +3,7 @@ import BlockStatement from './statements/BlockStatement';
 import DeleteStatement from './statements/DeleteStatement';
 import IfStatement from './statements/IfStatement';
 import WhileStatement from './statements/WhileStatement';
-import ForStatement from './statements/ForStatement';
+import BaseForStatement from './statements/for_statement/BaseForStatement';
 import ExpressionStatement from './statements/ExpressionStatement';
 import DoWhileStatement from './statements/DoWhileStatement';
 import ReturnStatement from './statements/ReturnStatement';
@@ -15,7 +15,7 @@ type Statement =
     | IfStatement
     | WhileStatement
     | DoWhileStatement
-    | ForStatement
+    | BaseForStatement
     | ExpressionStatement
     | ReturnStatement;
 

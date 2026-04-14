@@ -7,7 +7,6 @@ import BlockStatement from '../../../core/entities/ast/statements/statements/Blo
 import DeclarationStatement from '../../../core/entities/ast/statements/statements/declaration/DeclarationStatement';
 import PrefixTypeModifierKind from '../../../core/entities/modifier/type/prefix/modifiers/PrefixTypeModifierKind';
 import IfStatement from '../../../core/entities/ast/statements/statements/IfStatement';
-import ForStatement from '../../../core/entities/ast/statements/statements/ForStatement';
 import ExpressionStatement from '../../../core/entities/ast/statements/statements/ExpressionStatement';
 import ASTNodeType from '../../../core/entities/ast/ASTNodeType';
 import Expression from '../../../core/entities/ast/expressions/Expression';
@@ -22,6 +21,11 @@ import KeywordType from '../../../core/entities/keyword/KeywordType';
 import { generateAvroraExpressionString, generateAvroraTypeExpressionString } from './utils/generate';
 import CreateRowSchema from './entities/internal/CreateRowSchema';
 import ReturnStatement from '../../../core/entities/ast/statements/statements/ReturnStatement';
+import ClassicForStatement from '../../../core/entities/ast/statements/statements/for_statement/kinds/ClassicForStatement';
+import RangeForStatement from '../../../core/entities/ast/statements/statements/for_statement/kinds/RangeForStatement';
+import ForStatement from '../../../core/entities/ast/statements/statements/for_statement/ForStatement';
+import ForStatementKind from '../../../core/entities/ast/statements/statements/for_statement/ForStatementKind';
+import BaseForStatement from '../../../core/entities/ast/statements/statements/for_statement/BaseForStatement';
 
 export default class AvroraGenerator extends ItemsProcessor<Statement> {
     private rowNumber: number;
@@ -94,14 +98,14 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
         return this.createNewActionRow(`удаление объекта по указателю ${generateAvroraExpressionString(statement.deleted)}`);
     }
 
-    private generateForStatementRows(statement: ForStatement): GeneratedAvroraRow[] {
+    private generateClassicForStatementRows(statement: ClassicForStatement): GeneratedAvroraRow[] {
         const initRow: GeneratedAvroraRow[] =
             statement.init.nodeType === ASTNodeType.STATEMENT ? this.generateStatementRows(statement.init) : [this.generateExpressionRow(statement.init)];
 
         const condition: string = generateAvroraExpressionString(statement.condition);
-        const conditionIndex: number = ++this.rowNumber;
+        const conditionNumber: number = ++this.rowNumber;
         const conditionRow: GeneratedAvroraRow = this.createRowWith({
-            number: conditionIndex,
+            number: conditionNumber,
             next: this.rowNumber + 1, // If condition is true (points to 1st in body)
             condition: condition,
         });
@@ -119,7 +123,7 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
         const stepRow = this.createRowWith({
             number: stepNumber,
             action: generateAvroraExpressionString(statement.step),
-            next: conditionIndex, // points to condition to create cycle
+            next: conditionNumber, // points to condition to create cycle
         });
 
         if (body.length !== 0) {
@@ -134,11 +138,69 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
         for (const row of loopContext.breakRows) row.next = afterLoopNumber;
 
         conditionRow.subrow = this.createRowWith({
-            number: conditionIndex,
-            next: this.rowNumber + 1, // If condition is false (points to 1st after the cycle)
+            number: conditionNumber,
+            next: afterLoopNumber, // If condition is false (points to 1st after the cycle)
         });
 
         return [...initRow, conditionRow, ...body, stepRow];
+    }
+
+    private generateRangeForStatementRows(statement: RangeForStatement): GeneratedAvroraRow[] {
+        const iterableString: string = generateAvroraExpressionString(statement.iterable);
+
+        const conditionNumber: number = ++this.rowNumber;
+        const conditionRow: GeneratedAvroraRow = this.createRowWith({
+            number: conditionNumber,
+            next: this.rowNumber + 1, // If condition is true (points to 1st in body)
+            condition: `есть следующее значение в массиве ${iterableString}`,
+        });
+
+        let itemRow: GeneratedAvroraRow;
+        if (statement.item.nodeType === ASTNodeType.STATEMENT) {
+            if (statement.item.declarations.length !== 1) throw Error('Range-for declaration must contain exactly one declarator');
+
+            itemRow = this.createNewActionRow(`присвоить переменной ${statement.item.declarations[0].name} значение следующего элемента из ${iterableString}`);
+        } else {
+            itemRow = this.createNewActionRow(`${generateAvroraExpressionString(statement.item)} = следующее значение из ${iterableString}`);
+        }
+
+        const loopContext: AvroraGeneratorLoopContext = {
+            breakRows: [],
+            continueRows: [],
+        };
+
+        this.loopStack.push(loopContext);
+        let body: GeneratedAvroraRow[] = this.generateBlockStatementRows(statement.body);
+        this.loopStack.pop();
+
+        if (body.length !== 0) {
+            itemRow.next = body[0].number;
+            this.redirectFragmentExits(body, conditionNumber);
+        } else {
+            itemRow.next = conditionNumber;
+        }
+
+        const afterLoopNumber: number = this.rowNumber + 1;
+        for (const row of loopContext.continueRows) row.next = conditionNumber;
+        for (const row of loopContext.breakRows) row.next = afterLoopNumber;
+
+        conditionRow.subrow = this.createRowWith({
+            number: conditionNumber,
+            next: afterLoopNumber, // If condition is false (points to 1st after the cycle)
+        });
+
+        return [conditionRow, itemRow, ...body];
+    }
+
+    private generateForStatementRows(statement: ForStatement): GeneratedAvroraRow[] {
+        switch (statement.kind) {
+            case ForStatementKind.CLASSIC:
+                return this.generateClassicForStatementRows(statement);
+            case ForStatementKind.RANGE:
+                return this.generateRangeForStatementRows(statement);
+            default:
+                throw Error(`Unsupported ForStatement kind: ${(statement as BaseForStatement).kind}`);
+        }
     }
 
     private generateDoWhileStatementRows(statement: DoWhileStatement): GeneratedAvroraRow[] {
@@ -279,7 +341,7 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
             case StatementType.WHILE_STATEMENT:
                 return this.generateWhileStatementRows(statement);
             case StatementType.FOR_STATEMENT:
-                return this.generateForStatementRows(statement);
+                return this.generateForStatementRows(statement as ForStatement); // FIXME: Argument of type BaseForStatement is not assignable to parameter of type ForStatement
             case StatementType.DO_WHILE_STATEMENT:
                 return this.generateDoWhileStatementRows(statement);
             default:

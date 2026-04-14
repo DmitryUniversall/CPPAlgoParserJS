@@ -113,6 +113,7 @@ export default class StatementParserUtils extends GenericTokenParser {
         if (
             nextToken.tokenType === TokenType.SEMI ||
             nextToken.tokenType === TokenType.COMMA ||
+            nextToken.tokenType === TokenType.COLON ||   // TODO: Is this correct?
             nextToken.tokenType === TokenType.L_BRACKET ||
             (nextToken.tokenType === TokenType.OPERATOR && nextToken.text === operators.assign.literal)
         ) {
