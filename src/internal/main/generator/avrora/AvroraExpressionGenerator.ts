@@ -94,6 +94,8 @@ export default class AvroraExpressionGenerator {
                 return expression.keyword.literal;
             case ExpressionType.STRING_LITERAL_EXPRESSION:
                 return `"${expression.literal}"`;
+            case ExpressionType.BOOLEAN_NEGATE_EXPRESSION:
+                return `"отрицание (${expression.expr})"`;
             case ExpressionType.NEGATE_EXPRESSION:
                 return `-${this.generateExpressionString(expression.expr)}`;
             case ExpressionType.BINARY_OPERATION_EXPRESSION:
