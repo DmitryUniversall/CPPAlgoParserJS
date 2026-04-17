@@ -8,4 +8,5 @@ export default interface FunctionDescription extends BaseDescription {
     params: string;
     returnType: string;
     body: AvroraRow[];
+    description: string;
 }

@@ -99,6 +99,7 @@ export default class AvroraTranslationUnitGenerator {
             name: name,
             params: params,
             body: definition?.type === CallableDefinitionType.BODY ? this.generateStatementRows(definition.body.body) : [],
+            description: 'ОПИСАНИЕ',
         };
     }
 
@@ -136,6 +137,7 @@ export default class AvroraTranslationUnitGenerator {
             name: name,
             params: params,
             body: definition?.type === CallableDefinitionType.BODY ? this.generateStatementRows(definition.body.body) : [],
+            description: 'ОПИСАНИЕ',
         };
     }
 
@@ -147,7 +149,7 @@ export default class AvroraTranslationUnitGenerator {
             description: 'ОПИСАНИЕ',
             functionDescription: functionDescription,
             accessModifier: member.accessModifier,
-            isConstructor: false
+            isConstructor: false,
         };
     }
 
@@ -192,8 +194,8 @@ export default class AvroraTranslationUnitGenerator {
             rows.forEach((it) => {
                 it.number += rowNumber - 1;
                 it.next += rowNumber - 1;
-                body.push(it)
-            })
+                body.push(it);
+            });
         }
 
         return body;
@@ -211,6 +213,7 @@ export default class AvroraTranslationUnitGenerator {
             name: name,
             params: params,
             body: definition !== null ? this.generateConstructorDefinitionBody(definition) : [],
+            description: 'ОПИСАНИЕ',
         };
     }
 

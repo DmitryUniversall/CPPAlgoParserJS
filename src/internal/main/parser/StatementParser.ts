@@ -102,7 +102,8 @@ export default class StatementParser extends StatementParserUtils {
     private parseReturnStatement(): ReturnStatement {
         this.expectNextToken(TokenType.KEYWORD, keywords.RETURN.literal);
 
-        const returned: Expression = this.parseExpression();
+        let returned: Expression | null = null;
+        if (this.peek()?.tokenType !== TokenType.SEMI) returned = this.parseExpression();
 
         this.expectNextToken(TokenType.SEMI);
 

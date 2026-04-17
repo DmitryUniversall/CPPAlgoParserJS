@@ -319,7 +319,7 @@ export default class AvroraGenerator extends ItemsProcessor<Statement> {
     private generateReturnStatementRow(statement: ReturnStatement): GeneratedAvroraRow {
         return this.createRowWith({
             number: ++this.rowNumber,
-            action: `Возврат: ${generateAvroraExpressionString(statement.returned)}`,
+            action: statement.returned !== null ? `Возврат: ${generateAvroraExpressionString(statement.returned)}` : "Выход из функции",
             next: 0,
         });
     }

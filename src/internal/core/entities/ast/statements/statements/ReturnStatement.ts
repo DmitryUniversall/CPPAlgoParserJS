@@ -4,5 +4,5 @@ import Expression from '../../expressions/Expression';
 
 export default interface ReturnStatement extends BaseStatement {
     type: StatementType.RETURN_STATEMENT;
-    returned: Expression;
+    returned: Expression | null;
 }
