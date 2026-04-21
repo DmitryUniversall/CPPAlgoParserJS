@@ -25,6 +25,7 @@ public:
         {
             p_head_object->subordinate_objects.push_back(this);
         }
+        return true;
     }
 
     virtual ~cl_base()
@@ -117,7 +118,7 @@ public:
 
     const translationUnitParser = new TranslationUnitParser(input, tokens, 0);
     const translationUnit: TranslationUnit = translationUnitParser.parseTranslationUnit();
-    // console.log(translationUnit);
+    console.log(translationUnit);
 
     const translationUnitGenerator = new AvroraTranslationUnitGenerator(input, translationUnit);
     const descriptions: Description[] = translationUnitGenerator.generateDescriptionsForTranslationUnit();
